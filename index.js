@@ -1,9 +1,12 @@
 const app = require('./src/app');
 const dotenv = require('dotenv');
-dotenv.config();
+const connectDB = require('./src/configs/db');
 
-const PORT = process.env.PORT || 5000;
+dotenv.config();
+connectDB();
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
+  console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
 });

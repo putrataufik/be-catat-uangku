@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/userController');
+const { register, login } = require('../controllers/authController');
 
-router.get('/', userController.getAllUsers);
-router.get('/:id', userController.getUserById);
-router.post('/', userController.createUser);
-router.put('/:id', userController.updateUser);
-router.delete('/:id', userController.deleteUser);
+router.post('/register', (req, res, next) => {
+    console.log('👉 /register route hit');
+    next(); // lanjutkan ke controller
+  }, register);
+  
+router.post('/login', login);
 
 module.exports = router;

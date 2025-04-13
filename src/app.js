@@ -11,9 +11,11 @@ app.use('/api/users', userRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
+  console.error(err.stack); // tambahkan ini
   res.status(err.status || 500).json({
     message: err.message || 'Internal Server Error',
   });
 });
+
 
 module.exports = app;
