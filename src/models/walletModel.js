@@ -17,7 +17,7 @@ const walletSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Membuat compound index untuk memastikan kombinasi userId dan name unik
+// 1 user hanya memiliki 1 wallet yang namanya sama
 walletSchema.index({ userId: 1, name: 1 }, { unique: true });
 
 module.exports = mongoose.model('Wallet', walletSchema);

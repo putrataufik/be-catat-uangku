@@ -1,12 +1,13 @@
 // src/routes/transactionRoutes.js
 const express = require('express');
 const router = express.Router();
-const { createTransaction, getTransactionsByWallet, deleteTransaction } = require('../controllers/transactionController');
+const { createTransaction, getTransactionsByWallet, deleteTransaction, updateTransaction } = require('../controllers/transactionController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-router.post('/', authMiddleware, createTransaction); // Buat transaksi
-router.get('/:walletId', authMiddleware, getTransactionsByWallet); // Ambil transaksi berdasarkan wallet
+router.post('/', authMiddleware, createTransaction);
+router.get('/:walletId', authMiddleware, getTransactionsByWallet);
 router.delete('/:id', authMiddleware, deleteTransaction);
+router.put('/:id', authMiddleware, updateTransaction);
 
 
 module.exports = router;

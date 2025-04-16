@@ -9,7 +9,7 @@ const transactionSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['income', 'expense'],
+    enum: ['income', 'expense'],//hanya menerima 2 value "income" atau "expense"
     required: true
   },
   amount: {
