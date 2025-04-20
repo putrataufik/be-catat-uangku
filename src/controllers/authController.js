@@ -9,14 +9,27 @@ exports.register = async (req, res) => {
     console.log('🛠️ register controller running...');
     const { name, email, password } = req.body;
 
-    // cek jika user sudah ada
+    // Validasi nama
+    if (name.length < 4) {
+      return res.status(400).json({ message: 'Nama harus lebih dari 3 karakter' });
+    }
+
+    // Validasi password
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: 'Password minimal 8 karakter dan harus mengandung setidaknya 1 huruf kapital, 1 angka, dan 1 simbol'
+      });
+    }
+
+    // Cek jika user sudah ada
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'Email sudah digunakan' });
 
-    // hash password
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // simpan user
+    // Simpan user
     const user = new User({ name, email, password: hashedPassword });
     await user.save();
 
@@ -25,6 +38,7 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
 
 exports.login = async (req, res) => {
   try {
