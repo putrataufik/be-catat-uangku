@@ -4,7 +4,7 @@ const userRoutes = require('./routes/userRoutes');
 const walletRoutes = require('./routes/walletRoutes')
 const transactionRoutes = require('./routes/transactionRoutes');
 const plannedPaymentRoutes = require('./routes/plannedPaymentRoutes');
-
+const userProfileRoutes = require('./routes/userProfileRoutes')
 
 
 
@@ -18,6 +18,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/planned-payments', plannedPaymentRoutes);
+app.use('/api/profile', userProfileRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
