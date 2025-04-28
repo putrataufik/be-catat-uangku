@@ -1,4 +1,6 @@
 // src/controllers/userController.js
+// User Endpoints
+
 
 const User = require('../models/userModel');
 const bcrypt = require('bcryptjs');

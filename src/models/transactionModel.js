@@ -1,32 +1,37 @@
-// src/models/transactionModel.js
+// models/transactionModel.js
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
   walletId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Wallet',
-    required: true
+    required: true,
   },
   type: {
     type: String,
-    enum: ['income', 'expense'],//hanya menerima 2 value "income" atau "expense"
-    required: true
+    enum: ['expense', 'income'],
+    required: true,
   },
   amount: {
     type: Number,
-    required: true
+    required: true,
   },
   category: {
     type: String,
-    required: true
   },
   date: {
     type: Date,
-    required: true
+    required: true,
   },
   note: {
-    type: String
-  }
-}, { timestamps: true });
+    type: String,
+  },
+  plannedPaymentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PlannedPayment',
+  },
+}, {
+  timestamps: true,
+});
 
 module.exports = mongoose.model('Transaction', transactionSchema);

@@ -1,12 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
+const userProfileRoutes = require('./routes/userProfileRoutes')
 const walletRoutes = require('./routes/walletRoutes')
 const transactionRoutes = require('./routes/transactionRoutes');
 const plannedPaymentRoutes = require('./routes/plannedPaymentRoutes');
-const userProfileRoutes = require('./routes/userProfileRoutes')
-
-
+const budgetRoutes = require('./routes/budgetRoutes');
 
 const app = express();
 
@@ -15,10 +14,11 @@ app.use(express.json());
 
 //list Routes
 app.use('/api/users', userRoutes);
+app.use('/api/profile', userProfileRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/planned-payments', plannedPaymentRoutes);
-app.use('/api/profile', userProfileRoutes);
+app.use('/api/budgets', budgetRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {

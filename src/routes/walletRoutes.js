@@ -5,6 +5,6 @@ const { getWallets, createWallet, updateWallet, deleteWallet } = require('../con
 
 router.get('/', auth, getWallets);
 router.post('/', auth, createWallet);
-router.put('/:id', updateWallet);
-router.delete('/:id', deleteWallet);
+router.put('/:id',auth, updateWallet);
+router.delete('/:id',auth, deleteWallet);
 module.exports = router;

@@ -1,26 +1,79 @@
-// src/models/plannedPaymentModel.js
 const mongoose = require('mongoose');
 
-const plannedPaymentSchema = new mongoose.Schema({
-  userId: {
+const ReminderSchema = new mongoose.Schema({
+  days_before: {
+    type: Number,
+    required: true,
+  },
+  sent: {
+    type: Boolean,
+    default: false,
+  }
+}, { _id: false });
+
+const PlannedPaymentSchema = new mongoose.Schema({
+  user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  walletId: {
+  wallet_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Wallet',
     required: true,
   },
-  name: { type: String, required: true },
-  category: { type: String, required: true },
-  amount: { type: Number, required: true },
-  repeatInterval: { type: String, enum: ['daily', 'weekly', 'monthly'], required: true },
-  recipient: { type: String },
-  note: { type: String },
-  todayReminder: { type: Boolean, default: false },
-  h3Reminder: { type: Boolean, default: false },
-  nextDueDate: { type: Date, required: true },
-}, { timestamps: true });
+  title: {
+    type: String,
+    required: true,
+  },
+  description: String,
+  amount: {
+    type: Number,
+    required: true,
+  },
+  is_variable_amount: {
+    type: Boolean,
+    default: false,
+  },
+  type: {
+    type: String,
+    enum: ['income', 'expense'],
+    required: true,
+  },
+  category: {
+    type: String,
+    required: true,
+  },
+  payment_date: {
+    type: Date,
+    required: true,
+  },
+  is_recurring: {
+    type: Boolean,
+    default: false,
+  },
+  recurring_type: {
+    type: String,
+    enum: ['daily', 'weekly', 'monthly', 'yearly', 'custom'],
+    default: 'monthly',
+  },
+  recurring_interval: {
+    type: Number,
+    default: 1,
+  },
+  end_date: {
+    type: Date,
+    default: null,
+  },
+  status: {
+    type: String,
+    enum: ['planned', 'paid', 'overdue', 'skipped'],
+    default: 'planned',
+  },
+  reminders: {
+    type: [ReminderSchema],
+    default: [],
+  }
+}, { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } });
 
-module.exports = mongoose.model('PlannedPayment', plannedPaymentSchema);
+module.exports = mongoose.model('PlannedPayment', PlannedPaymentSchema);

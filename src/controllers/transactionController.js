@@ -1,5 +1,7 @@
 const Transaction = require("../models/transactionModel");
+const updateBudgetUsage = require("../utils/updateBudgetUsage");
 const Wallet = require("../models/walletModel");
+
 
 exports.createTransaction = async (req, res) => {
   try {
@@ -30,8 +32,13 @@ exports.createTransaction = async (req, res) => {
     }
 
     await wallet.save();
+    await updateBudgetUsage(req.user.userId, walletId, category);
 
-    res.status(201).json(transaction);
+    res.status(201).json({
+      message: "Transaksi berhasil dicatat",
+      transaction,
+      currentBalance: wallet.balance,
+    });
   } catch (err) {
     console.error("❌ Error saat membuat transaksi:", err);
     res
@@ -78,9 +85,17 @@ exports.deleteTransaction = async (req, res) => {
     }
 
     await wallet.save(); // simpan perubahan wallet
+    await updateBudgetUsage(
+      req.user.userId,
+      transaction.walletId,
+      transaction.category
+    );
     await transaction.deleteOne(); // hapus transaksi
 
-    res.json({ message: "Transaksi berhasil dihapus" });
+    res.json({
+      message: "Transaksi berhasil dihapus",
+      currentBalance: wallet.balance,
+    });
   } catch (err) {
     console.error("❌ Gagal menghapus transaksi:", err);
     res
@@ -96,15 +111,17 @@ exports.updateTransaction = async (req, res) => {
 
     // Cari transaksi lama
     const oldTransaction = await Transaction.findById(id);
-    if (!oldTransaction) return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+    if (!oldTransaction)
+      return res.status(404).json({ message: "Transaksi tidak ditemukan" });
 
     const wallet = await Wallet.findById(oldTransaction.walletId);
-    if (!wallet) return res.status(404).json({ message: 'Wallet tidak ditemukan' });
+    if (!wallet)
+      return res.status(404).json({ message: "Wallet tidak ditemukan" });
 
     // Step 1: Rollback efek transaksi lama
-    if (oldTransaction.type === 'income') {
+    if (oldTransaction.type === "income") {
       wallet.balance -= oldTransaction.amount;
-    } else if (oldTransaction.type === 'expense') {
+    } else if (oldTransaction.type === "expense") {
       wallet.balance += oldTransaction.amount;
     }
 
@@ -118,17 +135,29 @@ exports.updateTransaction = async (req, res) => {
     await oldTransaction.save();
 
     // Step 3: Terapkan efek transaksi baru
-    if (oldTransaction.type === 'income') {
+    if (oldTransaction.type === "income") {
       wallet.balance += oldTransaction.amount;
-    } else if (oldTransaction.type === 'expense') {
+    } else if (oldTransaction.type === "expense") {
       wallet.balance -= oldTransaction.amount;
     }
 
     await wallet.save();
+    await updateBudgetUsage(
+      req.user.userId,
+      oldTransaction.walletId,
+      oldTransaction.category
+    );
 
-    res.json({ message: 'Transaksi berhasil diperbarui', transaction: oldTransaction });
+    res.json({
+      message: "Transaksi berhasil diperbarui",
+      transaction: oldTransaction,
+      currentBalance: wallet.balance,
+    });
   } catch (err) {
-    console.error('❌ Gagal mengupdate transaksi:', err);
-    res.status(500).json({ message: 'Gagal mengupdate transaksi', error: err.message });
+    console.error("❌ Gagal mengupdate transaksi:", err);
+    res
+      .status(500)
+      .json({ message: "Gagal mengupdate transaksi", error: err.message });
   }
 };
+
