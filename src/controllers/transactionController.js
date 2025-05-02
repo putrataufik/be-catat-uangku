@@ -1,6 +1,7 @@
 const Transaction = require("../models/transactionModel");
 const updateBudgetUsage = require("../utils/updateBudgetUsage");
 const Wallet = require("../models/walletModel");
+const mongoose = require('mongoose');
 
 
 exports.createTransaction = async (req, res) => {
@@ -161,3 +162,163 @@ exports.updateTransaction = async (req, res) => {
   }
 };
 
+// Ambil semua transaksi milik user
+exports.getAllTransactions = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const wallets = await Wallet.find({ userId }).select('_id');
+    const walletIds = wallets.map(wallet => wallet._id);
+
+    const filter = { walletId: { $in: walletIds } };
+
+    if (req.query.type) {
+      filter.type = req.query.type; // filter berdasarkan type income/expense
+    }
+    if (req.query.category) {
+      filter.category = req.query.category; // filter berdasarkan kategori
+    }
+    if (req.query.startDate && req.query.endDate) {
+      filter.date = {
+        $gte: new Date(req.query.startDate),
+        $lte: new Date(req.query.endDate),
+      };
+    }
+
+    const transactions = await Transaction.find(filter).sort({ date: -1 });
+
+    res.json(transactions);
+  } catch (err) {
+    console.error("❌ Gagal mengambil semua transaksi:", err);
+    res.status(500).json({ message: "Gagal mengambil semua transaksi", error: err.message });
+  }
+};
+
+exports.getTransactionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const transaction = await Transaction.findById(id);
+
+    if (!transaction) {
+      return res.status(404).json({ message: "Transaksi tidak ditemukan" });
+    }
+
+    res.json(transaction);
+  } catch (err) {
+    console.error("❌ Gagal mengambil detail transaksi:", err);
+    res.status(500).json({ message: "Gagal mengambil transaksi", error: err.message });
+  }
+};
+
+exports.getTransactionSummary = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { type, category, startDate, endDate, groupBy } = req.query;
+
+    const aggregatePipeline = [
+      {
+        $lookup: {
+          from: 'wallets',
+          localField: 'walletId',
+          foreignField: '_id',
+          as: 'wallet'
+        }
+      },
+      { $unwind: '$wallet' }
+    ];
+
+    const matchConditions = {
+      'wallet.userId': new mongoose.Types.ObjectId(userId),
+    };
+
+    if (type) matchConditions.type = type;
+    if (category) matchConditions.category = category;
+    if (startDate || endDate) {
+      matchConditions.date = {};
+      if (startDate) matchConditions.date.$gte = new Date(startDate);
+      if (endDate) matchConditions.date.$lte = new Date(endDate);
+    }
+
+    aggregatePipeline.push({ $match: matchConditions });
+
+    // Dynamic grouping
+    if (groupBy === 'category') {
+      aggregatePipeline.push({
+        $group: {
+          _id: '$category',
+          totalIncome: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "income"] }, "$amount", 0]
+            }
+          },
+          totalExpense: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0]
+            }
+          },
+          count: { $sum: 1 }
+        }
+      });
+      aggregatePipeline.push({ $sort: { _id: 1 } });
+
+    } else if (groupBy === 'month') {
+      aggregatePipeline.push({
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$date" } },
+          totalIncome: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "income"] }, "$amount", 0]
+            }
+          },
+          totalExpense: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0]
+            }
+          },
+          count: { $sum: 1 }
+        }
+      });
+      aggregatePipeline.push({ $sort: { _id: 1 } });
+
+    } else if (!groupBy || groupBy === 'total') {
+      aggregatePipeline.push({
+        $group: {
+          _id: null,
+          totalIncome: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "income"] }, "$amount", 0]
+            }
+          },
+          totalExpense: {
+            $sum: {
+              $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0]
+            }
+          },
+          count: { $sum: 1 }
+        }
+      });
+
+    } else {
+      return res.status(400).json({
+        message: "Parameter 'groupBy' hanya boleh: category, month, atau total (default)"
+      });
+    }
+
+    const result = await Transaction.aggregate(aggregatePipeline);
+
+    // Tambahkan netTotal secara manual di JS
+    const summaryWithNet = result.map(item => ({
+      ...item,
+      netTotal: item.totalIncome - item.totalExpense
+    }));
+
+    res.json({
+      summary: summaryWithNet,
+      filters: { type, category, startDate, endDate, groupBy: groupBy || 'total' }
+    });
+
+  } catch (err) {
+    console.error("❌ Gagal mendapatkan summary transaksi:", err);
+    res.status(500).json({ message: "Gagal mendapatkan summary", error: err.message });
+  }
+};

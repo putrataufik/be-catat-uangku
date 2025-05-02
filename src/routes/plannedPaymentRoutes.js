@@ -8,7 +8,8 @@ const {
   getPlannedPaymentById,
   updatePlannedPaymentById,
   deletePlannedPaymentById,
-  payPlannedPaymentById
+  payPlannedPayment,
+  cancelPayment
 } = require('../controllers/plannedPaymentController');
 
 // Endpoint Planned Payment
@@ -17,6 +18,7 @@ router.get('/', authMiddleware, getPlannedPayments); // 2. Ambil semua milik use
 router.get('/:id', authMiddleware, getPlannedPaymentById); // 3. Ambil berdasarkan ID
 router.put('/:id', authMiddleware, updatePlannedPaymentById); // 4. Update berdasarkan ID
 router.delete('/:id', authMiddleware, deletePlannedPaymentById); // 5. Hapus berdasarkan ID
-router.post('/:id/pay', authMiddleware, payPlannedPaymentById); // 6. Bayar
+router.post('/:id/pay', authMiddleware, payPlannedPayment); // 6. Bayar
+router.post('/:id/cancel-payment', authMiddleware, cancelPayment);
 
 module.exports = router;
