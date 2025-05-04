@@ -6,6 +6,7 @@ const walletRoutes = require('./routes/walletRoutes')
 const transactionRoutes = require('./routes/transactionRoutes');
 const plannedPaymentRoutes = require('./routes/plannedPaymentRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
+const scanReceipt = require('./routes/scanRoutes');
 
 const app = express();
 
@@ -19,6 +20,8 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/planned-payments', plannedPaymentRoutes);
 app.use('/api/budgets', budgetRoutes);
+app.use('/api/scan-receipt', scanReceipt)
+
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
