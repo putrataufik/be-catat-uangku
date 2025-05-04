@@ -6,18 +6,17 @@ const budgetSchema = new mongoose.Schema({
     required: true,
     ref: 'User',
   },
-  walletId: {
+  walletIds: [{
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
     ref: 'Wallet',
-  },
+  }],  
   name: String,
   amount: Number,
   usedAmount: {
     type: Number,
     default: 0,
   },
-  category: String,
+  categories: [String], // ⬅️ ubah dari category: String
   period: String, // "monthly", "weekly", etc.
   startDate: Date,
   endDate: Date,

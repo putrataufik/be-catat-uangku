@@ -25,5 +25,28 @@ const updateBudgetUsage = async (userId, walletId, category) => {
     await budget.save();
   }
 };
+const calculateUsedAmount = async (budget) => {
+  const used = await Transaction.aggregate([
+    {
+      $match: {
+        walletId: { $in: budget.walletIds },
+        type: 'expense',
+        category: { $in: budget.categories },
+        date: {
+          $gte: new Date(budget.startDate),
+          $lte: new Date(budget.endDate),
+        }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalUsed: { $sum: '$amount' }
+      }
+    }
+  ]);
 
-module.exports = updateBudgetUsage;
+  return used.length > 0 ? used[0].totalUsed : 0;
+};
+
+module.exports = {updateBudgetUsage, calculateUsedAmount };
