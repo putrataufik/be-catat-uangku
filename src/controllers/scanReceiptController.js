@@ -21,17 +21,43 @@ const scanReceipt = async (req, res) => {
     const base64Image = Buffer.from(file.buffer).toString("base64");
 
     const categories = [
-        "Makanan & Minuman", "Transportasi", "Belanja Harian", "Pulsa & Internet", "Listrik & Air",
-        "Parkir", "Sewa / Cicilan Rumah", "Perabotan & Alat Rumah", "Perawatan Rumah", "Tagihan Rutin",
-        "Pendidikan Anak", "Uang Saku", "Pengasuhan", "Obat-obatan", "Periksa Dokter", "BPJS / Asuransi",
-        "Langganan Streaming", "Nonton Bioskop", "Nongkrong / Café", "Hobi", "Donasi / Amal", "Zakat / Infaq",
-        "Kado / Hadiah", "Cicilan / Kredit", "Pajak & Denda", "Lainnya", "Gaji", "Bonus", "Hasil Usaha",
-        "Hadiah", "Penjualan Barang", "Cashback / Reward"
-      ];
-      
-      const categoryListText = categories.map(c => `- ${c}`).join('\n');
-      
-      const prompt = `Kamu adalah asisten keuangan digital. Saya ingin kamu membaca gambar nota dan mengisi data JSON berikut ini:
+      "Makanan & Minuman",
+      "Transportasi",
+      "Belanja Harian",
+      "Pulsa & Internet",
+      "Listrik & Air",
+      "Parkir",
+      "Sewa / Cicilan Rumah",
+      "Perabotan & Alat Rumah",
+      "Perawatan Rumah",
+      "Tagihan Rutin",
+      "Pendidikan Anak",
+      "Uang Saku",
+      "Pengasuhan",
+      "Obat-obatan",
+      "Periksa Dokter",
+      "BPJS / Asuransi",
+      "Langganan Streaming",
+      "Nonton Bioskop",
+      "Nongkrong / Café",
+      "Hobi",
+      "Donasi / Amal",
+      "Zakat / Infaq",
+      "Kado / Hadiah",
+      "Cicilan / Kredit",
+      "Pajak & Denda",
+      "Lainnya",
+      "Gaji",
+      "Bonus",
+      "Hasil Usaha",
+      "Hadiah",
+      "Penjualan Barang",
+      "Cashback / Reward",
+    ];
+
+    const categoryListText = categories.map((c) => `- ${c}`).join("\n");
+
+    const prompt = `Kamu adalah asisten keuangan digital. Saya ingin kamu membaca gambar nota dan mengisi data JSON berikut ini:
       
       {
         "amount": (jumlah total pembelian dalam angka tanpa simbol),
@@ -45,7 +71,6 @@ const scanReceipt = async (req, res) => {
       ${categoryListText}
       
       Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan teks.`;
-      
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-pro" });
@@ -60,14 +85,59 @@ const scanReceipt = async (req, res) => {
       prompt,
     ]);
 
+    const validCategories = [
+      "Makanan & Minuman",
+      "Transportasi",
+      "Belanja Harian",
+      "Pulsa & Internet",
+      "Listrik & Air",
+      "Parkir",
+      "Sewa / Cicilan Rumah",
+      "Perabotan & Alat Rumah",
+      "Perawatan Rumah",
+      "Tagihan Rutin",
+      "Pendidikan Anak",
+      "Uang Saku",
+      "Pengasuhan",
+      "Obat-obatan",
+      "Periksa Dokter",
+      "BPJS / Asuransi",
+      "Langganan Streaming",
+      "Nonton Bioskop",
+      "Nongkrong / Café",
+      "Hobi",
+      "Donasi / Amal",
+      "Zakat / Infaq",
+      "Kado / Hadiah",
+      "Cicilan / Kredit",
+      "Pajak & Denda",
+      "Lainnya",
+      "Gaji",
+      "Bonus",
+      "Hasil Usaha",
+      "Hadiah",
+      "Penjualan Barang",
+      "Cashback / Reward",
+    ];
+
     const text = result.response.text();
-    const cleaned = text.replace(/```json|```/g, '').trim();
+    const cleaned = text.replace(/```json|```/g, "").trim();
     // Validasi JSON
     let json;
     try {
       json = JSON.parse(cleaned);
+      // Validasi kategori
+      if (!validCategories.includes(json.category)) {
+        return res.status(400).json({
+          error: "Kategori tidak valid",
+          acceptedCategories: validCategories,
+          receivedCategory: json.category,
+        });
+      }
     } catch (e) {
-      return res.status(400).json({ error: "Respon bukan JSON valid", raw: text });
+      return res
+        .status(400)
+        .json({ error: "Respon bukan JSON valid", raw: text });
     }
 
     res.status(200).json({
@@ -82,5 +152,5 @@ const scanReceipt = async (req, res) => {
 
 module.exports = {
   uploadMiddleware,
-  scanReceipt
+  scanReceipt,
 };
