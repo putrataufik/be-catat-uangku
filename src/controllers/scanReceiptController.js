@@ -73,7 +73,7 @@ const scanReceipt = async (req, res) => {
       Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan teks.`;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "models/gemini-2.0-flash" });
 
     const result = await model.generateContent([
       {

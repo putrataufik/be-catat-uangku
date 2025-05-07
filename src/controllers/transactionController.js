@@ -1,5 +1,5 @@
 const Transaction = require("../models/transactionModel");
-const updateBudgetUsage = require("../utils/updateBudgetUsage");
+const {updateBudgetUsage} = require("../utils/updateBudgetUsage");
 const Wallet = require("../models/walletModel");
 const mongoose = require('mongoose');
 

@@ -50,7 +50,7 @@ exports.getBudgets = async (req, res) => {
         ...budget.toObject(),
         usedAmount: used,
         remainingAmount: Math.max(remaining, 0),
-        percentUsed: Math.min(percentUsed, 100).toFixed(2),
+        percentUsed: Math.round(Math.min(percentUsed, 100) * 100) / 100
       };
     }));
 
