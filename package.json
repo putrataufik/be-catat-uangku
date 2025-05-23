@@ -7,7 +7,6 @@
     "dev": "nodemon index.js",
     "test:coverage": "jest --coverage",
     "test": "jest"
-
   },
   "author": "Putra Taufik",
   "license": "ISC",
@@ -26,11 +25,24 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "jest-html-reporter": "^4.1.0",
     "mongodb-memory-server": "^10.1.4",
     "supertest": "^7.1.1"
   },
   "jest": {
-    "setupFilesAfterEnv": ["<rootDir>/tests/bootstrap.js"],
-    "testEnvironment": "node"
+    "setupFiles": ["dotenv/config"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/bootstrap.js"
+    ],
+    "testEnvironment": "node",
+    "reporters": [
+    "default",
+    ["jest-html-reporter", {
+      "pageTitle": "Test Report",
+      "outputPath": "./reports/test-report.html",
+      "includeFailureMsg": true,
+      "includeConsoleLog": true
+    }]
+  ]
   }
 }

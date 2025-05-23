@@ -7,6 +7,8 @@ const transactionRoutes = require('./routes/transactionRoutes');
 const plannedPaymentRoutes = require('./routes/plannedPaymentRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
 const scanReceipt = require('./routes/scanRoutes');
+require('dotenv').config();
+
 
 const app = express();
 
