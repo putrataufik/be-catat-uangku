@@ -5,7 +5,9 @@
   "scripts": {
     "start": "nodemon index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:coverage": "jest --coverage",
+    "test": "jest"
+
   },
   "author": "Putra Taufik",
   "license": "ISC",
@@ -13,6 +15,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^3.0.2",
+    "chalk": "^4.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
@@ -20,5 +23,14 @@
     "mongoose": "^8.13.2",
     "multer": "^1.4.5-lts.2",
     "nodemon": "^3.1.9"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "mongodb-memory-server": "^10.1.4",
+    "supertest": "^7.1.1"
+  },
+  "jest": {
+    "setupFilesAfterEnv": ["<rootDir>/tests/bootstrap.js"],
+    "testEnvironment": "node"
   }
 }
