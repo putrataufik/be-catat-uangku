@@ -22,7 +22,7 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/planned-payments', plannedPaymentRoutes);
 app.use('/api/budgets', budgetRoutes);
-app.use('/api/scan-receipt', scanReceipt)
+app.use('/api/scan-receipt', scanReceipt);
 
 
 // Error Handler Middleware
