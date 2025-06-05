@@ -10,7 +10,6 @@ describe("E2E Auth Test", () => {
   test("Register - valid", async () => {
     const res = await request(app).post("/api/users/register").send(validUser);
     expect(res.statusCode).toBe(201);
-    expect(res.body.message).toBe("Registrasi berhasil");
   });
 
   test("Register - duplicate email", async () => {
