@@ -7,6 +7,8 @@ const noteRoutes = require('./routes/noteRoutes');
 const plannedPaymentRoutes = require('./routes/plannedPaymentRoutes');
 const budgetRoutes = require('./routes/budgetRoutes');
 const scanReceipt = require('./routes/scanRoutes');
+const voiceReceipt = require('./routes/voiceRoutes');
+
 require('dotenv').config();
 
 const app = express();
@@ -22,6 +24,7 @@ app.use('/api/notes', noteRoutes);
 app.use('/api/planned-payments', plannedPaymentRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/scan-receipt', scanReceipt);
+app.use('/api/voice-receipt', voiceReceipt);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
