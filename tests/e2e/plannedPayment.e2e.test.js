@@ -102,11 +102,11 @@ describe("E2E: Planned Payment Flow", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(pay.statusCode).toBe(200);
-    expect(pay.body.transaction.amount).toBe(150000);
+    expect(pay.body.note.amount).toBe(150000);
     expect(pay.body.statusNow).toBe("paid");
   });
 
-  it("should cancel the last planned payment transaction and refund wallet", async () => {
+  it("should cancel the last planned payment note and refund wallet", async () => {
     const create = await request(app)
       .post("/api/planned-payments")
       .set("Authorization", `Bearer ${token}`)

@@ -148,7 +148,7 @@ Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan 
 
     res.status(200).json({
       message: "Berhasil membaca nota",
-      transaction: json,
+      note: json,
     });
   } catch (err) {
     console.error("❌ Error scan nota:", err.message);

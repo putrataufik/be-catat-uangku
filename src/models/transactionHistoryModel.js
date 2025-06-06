@@ -1,10 +1,10 @@
-// models/transactionHistoryModel.js
+
 const mongoose = require('mongoose');
 
-const transactionHistorySchema = new mongoose.Schema({
+const noteHistorySchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   walletId: { type: mongoose.Schema.Types.ObjectId, ref: 'Wallet', required: true },
-  transactionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Transaction' },
+  noteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Note' },
   type: { type: String, enum: ['income', 'expense'], required: true },
   action: { type: String, enum: ['create', 'update', 'delete'], required: true },
   amount: Number,
@@ -14,4 +14,4 @@ const transactionHistorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('TransactionHistory', transactionHistorySchema);
+module.exports = mongoose.model('NoteHistory', noteHistorySchema);

@@ -1,6 +1,6 @@
 // Ini Untuk Rencana Anggaran / Budgeting
 const Budget = require('../models/budgetModel');
-const Transaction = require('../models/transactionModel');
+const Note = require('../models/noteModel');
 
 const updateBudgetUsage = async (userId, walletId, category) => {
   const budgets = await Budget.find({
@@ -10,7 +10,7 @@ const updateBudgetUsage = async (userId, walletId, category) => {
   });
 
   for (let budget of budgets) {
-    const expenses = await Transaction.find({
+    const expenses = await Note.find({
       walletId,
       type: 'expense',
       category,
@@ -26,7 +26,7 @@ const updateBudgetUsage = async (userId, walletId, category) => {
   }
 };
 const calculateUsedAmount = async (budget) => {
-  const used = await Transaction.aggregate([
+  const used = await Note.aggregate([
     {
       $match: {
         walletId: { $in: budget.walletIds },

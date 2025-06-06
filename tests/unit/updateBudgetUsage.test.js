@@ -1,8 +1,8 @@
 const { calculateUsedAmount } = require('../../src/utils/updateBudgetUsage');
-const Transaction = require('../../src/models/transactionModel');
+const Note = require('../../src/models/noteModel');
 
 // Mock model
-jest.mock('../../src/models/transactionModel');
+jest.mock('../../src/models/noteModel');
 
 describe('🧪 Unit Test: calculateUsedAmount', () => {
   afterEach(() => {
@@ -11,7 +11,7 @@ describe('🧪 Unit Test: calculateUsedAmount', () => {
 
   test('✅ return totalUsed jika ada transaksi', async () => {
     // setup mock return value
-    Transaction.aggregate.mockResolvedValue([{ totalUsed: 300000 }]);
+    Note.aggregate.mockResolvedValue([{ totalUsed: 300000 }]);
 
     const budget = {
       walletIds: ['wallet1'],
@@ -22,11 +22,11 @@ describe('🧪 Unit Test: calculateUsedAmount', () => {
 
     const result = await calculateUsedAmount(budget);
     expect(result).toBe(300000);
-    expect(Transaction.aggregate).toHaveBeenCalled();
+    expect(Note.aggregate).toHaveBeenCalled();
   });
 
   test('🟡 return 0 jika tidak ada transaksi', async () => {
-    Transaction.aggregate.mockResolvedValue([]);
+    Note.aggregate.mockResolvedValue([]);
 
     const budget = {
       walletIds: ['wallet1'],

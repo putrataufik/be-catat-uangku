@@ -1,6 +1,6 @@
-exports.validateTransactionInput = ({ type, amount, category, date }) => {
+exports.validateNoteInput = ({ type, amount, category, date }) => {
   if (!['income', 'expense'].includes(type)) {
-    return "Jenis transaksi tidak valid";
+    return "Jenis catatan tidak valid";
   }
   if (typeof amount !== 'number' || amount <= 0) {
     return "Jumlah harus berupa angka positif";

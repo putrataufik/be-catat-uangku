@@ -1,7 +1,7 @@
-// models/transactionModel.js
+// models/noteModel.js
 const mongoose = require('mongoose');
 
-const transactionSchema = new mongoose.Schema({
+const noteSchema = new mongoose.Schema({
   walletId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Wallet',
@@ -34,4 +34,4 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-module.exports = mongoose.model('Transaction', transactionSchema);
+module.exports = mongoose.model('Note', noteSchema);

@@ -1,15 +1,13 @@
-const Transaction = require('../models/transactionModel');
+const Note = require('../models/noteModel');
 const Wallet = require('../models/walletModel');
 const mongoose = require('mongoose');
 
 exports.getWallets = async (req, res) => {
   try {
-    const wallets = await Wallet.find({ userId: req.user.userId }); // dari middleware JWT
+    const wallets = await Wallet.find({ userId: req.user.userId });
     res.json(wallets);
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Gagal mengambil dompet", error: err.message });
+    res.status(500).json({ message: "Gagal mengambil dompet", error: err.message });
   }
 };
 
@@ -31,15 +29,13 @@ exports.createWallet = async (req, res) => {
       return res.status(400).json({ message: "Nama wallet sudah digunakan" });
     }
 
-    res
-      .status(500)
-      .json({ message: "Gagal membuat dompet", error: err.message });
+    res.status(500).json({ message: "Gagal membuat dompet", error: err.message });
   }
 };
 
 exports.updateWallet = async (req, res) => {
   try {
-    const { id } = req.params; // walletId
+    const { id } = req.params;
     const userId = req.user.userId;
     const { name, balance } = req.body;
 
@@ -56,32 +52,26 @@ exports.updateWallet = async (req, res) => {
 
     res.json({ message: "Wallet berhasil diperbarui", wallet });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Gagal memperbarui wallet", error: err.message });
+    res.status(500).json({ message: "Gagal memperbarui wallet", error: err.message });
   }
 };
 
 exports.deleteWallet = async (req, res) => {
   try {
-    const { id } = req.params; // walletId
+    const { id } = req.params;
     const userId = req.user.userId;
 
     const wallet = await Wallet.findOneAndDelete({ _id: id, userId });
-    await Transaction.deleteMany({ walletId: wallet._id });
-
 
     if (!wallet) {
-      return res
-        .status(404)
-        .json({ message: "Wallet tidak ditemukan atau bukan milik kamu" });
+      return res.status(404).json({ message: "Wallet tidak ditemukan atau bukan milik kamu" });
     }
+
+    await Note.deleteMany({ walletId: wallet._id }); // hapus semua catatan terkait
 
     res.json({ message: "Wallet berhasil dihapus" });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Gagal menghapus wallet", error: err.message });
+    res.status(500).json({ message: "Gagal menghapus wallet", error: err.message });
   }
 };
 
@@ -91,7 +81,6 @@ exports.getWalletSummary = async (req, res) => {
     const userId = req.user.userId;
     const { startDate, endDate, category, type } = req.query;
 
-    // Pastikan wallet milik user
     const wallet = await Wallet.findOne({ _id: walletId, userId });
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet tidak ditemukan atau bukan milik Anda' });
@@ -107,15 +96,15 @@ exports.getWalletSummary = async (req, res) => {
       if (endDate) filter.date.$lte = new Date(endDate);
     }
 
-    const transactions = await Transaction.find(filter);
+    const notes = await Note.find(filter);
 
-    const totalIncome = transactions
-      .filter(tx => tx.type === 'income')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalIncome = notes
+      .filter(n => n.type === 'income')
+      .reduce((sum, n) => sum + n.amount, 0);
 
-    const totalExpense = transactions
-      .filter(tx => tx.type === 'expense')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpense = notes
+      .filter(n => n.type === 'expense')
+      .reduce((sum, n) => sum + n.amount, 0);
 
     res.json({
       walletId,
@@ -123,7 +112,7 @@ exports.getWalletSummary = async (req, res) => {
       totalIncome,
       totalExpense,
       netTotal: totalIncome - totalExpense,
-      count: transactions.length,
+      count: notes.length,
       filters: { startDate, endDate, type, category }
     });
   } catch (err) {

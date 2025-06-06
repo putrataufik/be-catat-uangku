@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
-const Transaction = require('../models/transactionModel');
+const Note = require('../models/noteModel'); // ganti dari noteModel
 
-exports.buildTransactionSummary = async (userId, filters) => {
+exports.buildNoteSummary = async (userId, filters) => {
   const { type, category, startDate, endDate, groupBy } = filters;
 
   const aggregatePipeline = [
@@ -82,7 +82,7 @@ exports.buildTransactionSummary = async (userId, filters) => {
     });
   }
 
-  const result = await Transaction.aggregate(aggregatePipeline);
+  const result = await Note.aggregate(aggregatePipeline);
 
   return result.map(item => ({
     ...item,
