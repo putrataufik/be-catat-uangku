@@ -45,7 +45,7 @@ describe("E2E: Scan Receipt Upload and Parsing", () => {
     expect(res.body.error).toBe("Tipe gambar tidak didukung");
   });
 
-  it("should accept a valid image and return transaction JSON", async () => {
+  it("should accept a valid image and return note JSON", async () => {
     const imagePath = path.resolve(__dirname, "../assets/sample-recipe.jpg");
 
     if (!fs.existsSync(imagePath)) {
@@ -59,9 +59,9 @@ describe("E2E: Scan Receipt Upload and Parsing", () => {
       .attach("image", imagePath);
 
     expect(res.statusCode).toBe(200);
-    expect(res.body.transaction).toHaveProperty("amount");
-    expect(res.body.transaction).toHaveProperty("category");
-    expect(res.body.transaction).toHaveProperty("date");
-    expect(res.body.transaction).toHaveProperty("note");
+    expect(res.body.note).toHaveProperty("amount");
+    expect(res.body.note).toHaveProperty("category");
+    expect(res.body.note).toHaveProperty("date");
+    expect(res.body.note).toHaveProperty("note");
   });
 });

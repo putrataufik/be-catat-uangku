@@ -143,12 +143,12 @@ Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan 
     } catch (e) {
       return res
         .status(400)
-        .json({ error: "Respon bukan JSON valid", raw: text });
+        .json({ error: "harap memasukan gambar nota valid", raw: text });
     }
 
     res.status(200).json({
       message: "Berhasil membaca nota",
-      transaction: json,
+      note: json,
     });
   } catch (err) {
     console.error("❌ Error scan nota:", err.message);

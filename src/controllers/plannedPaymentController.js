@@ -1,8 +1,6 @@
-// controllers/plannedPaymentController.js
 const PlannedPayment = require('../models/plannedPaymentModel');
 const Wallet = require('../models/walletModel');
-const Transaction = require('../models/transactionModel');
-
+const Note = require('../models/noteModel');
 
 exports.createPlannedPayment = async (req, res) => {
   try {
@@ -23,7 +21,6 @@ exports.createPlannedPayment = async (req, res) => {
       reminders
     } = req.body;
 
-    // Pastikan wallet valid & milik user
     const wallet = await Wallet.findOne({ _id: wallet_id, userId });
     if (!wallet) {
       return res.status(404).json({ message: 'Wallet tidak ditemukan atau bukan milik Anda' });
@@ -58,8 +55,6 @@ exports.createPlannedPayment = async (req, res) => {
   }
 };
 
-
-// 2. Get All Planned Payments of a User
 exports.getPlannedPayments = async (req, res) => {
   try {
     const plans = await PlannedPayment.find({ user_id: req.user.userId });
@@ -69,7 +64,6 @@ exports.getPlannedPayments = async (req, res) => {
   }
 };
 
-// 3. Get Planned Payment by ID
 exports.getPlannedPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,15 +71,14 @@ exports.getPlannedPaymentById = async (req, res) => {
     const plan = await PlannedPayment.findOne({ _id: id, user_id: req.user.userId });
     if (!plan) return res.status(404).json({ message: 'Planned payment tidak ditemukan' });
 
-    const transactions = await Transaction.find({ plannedPaymentId: plan._id });
+    const notes = await Note.find({ plannedPaymentId: plan._id });
 
-    res.json({ plan, transactions });
+    res.json({ plan, notes });
   } catch (err) {
     res.status(500).json({ message: 'Gagal mengambil planned payment', error: err.message });
   }
 };
 
-// 4. Update Planned Payment
 exports.updatePlannedPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,8 +97,6 @@ exports.updatePlannedPaymentById = async (req, res) => {
   }
 };
 
-
-// 5. Delete Planned Payment
 exports.deletePlannedPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -119,8 +110,6 @@ exports.deletePlannedPaymentById = async (req, res) => {
   }
 };
 
-
-// 6. Pay Planned Payment
 exports.payPlannedPayment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -131,32 +120,27 @@ exports.payPlannedPayment = async (req, res) => {
     const wallet = await Wallet.findById(plan.wallet_id);
     if (!wallet) return res.status(404).json({ message: 'Wallet tidak ditemukan' });
 
-    // Gunakan plan.payment_date sebagai acuan bulan
     const paymentDate = new Date(plan.payment_date);
     const monthStart = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), 1);
     const monthEnd = new Date(paymentDate.getFullYear(), paymentDate.getMonth() + 1, 1);
 
-    // Cek apakah sudah ada transaksi untuk bulan yang sama (berdasarkan plan.payment_date)
-    const existingTransaction = await Transaction.findOne({
+    const existingNote = await Note.findOne({
       plannedPaymentId: plan._id,
       date: { $gte: monthStart, $lt: monthEnd }
     });
 
-    if (existingTransaction) {
+    if (existingNote) {
       return res.status(400).json({ message: 'Pembayaran untuk bulan ini sudah dilakukan' });
     }
 
-    // Cek saldo cukup (jika expense)
     if (plan.type === 'expense' && wallet.balance < plan.amount) {
       return res.status(400).json({ message: 'Saldo tidak mencukupi untuk pembayaran ini' });
     }
 
-    // Update saldo wallet
     wallet.balance += plan.type === 'income' ? plan.amount : -plan.amount;
     await wallet.save();
 
-    // Gunakan plan.payment_date sebagai tanggal transaksi (bukan Date.now())
-    const transaction = new Transaction({
+    const note = new Note({
       walletId: plan.wallet_id,
       type: plan.type,
       amount: plan.amount,
@@ -165,14 +149,14 @@ exports.payPlannedPayment = async (req, res) => {
       note: `[Planned] ${plan.title}`,
       plannedPaymentId: plan._id
     });
-    await transaction.save();
+    await note.save();
 
     plan.status = 'paid';
     await plan.save();
 
     res.json({
       message: 'Pembayaran berhasil dikonfirmasi',
-      transaction,
+      note,
       currentBalance: wallet.balance,
       statusNow: plan.status
     });
@@ -182,13 +166,10 @@ exports.payPlannedPayment = async (req, res) => {
   }
 };
 
-
-
 exports.cancelPayment = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Cari planned payment milik user
     const plan = await PlannedPayment.findOne({ _id: id, user_id: req.user.userId });
     if (!plan) {
       return res.status(404).json({ message: 'Planned payment tidak ditemukan atau bukan milik Anda' });
@@ -199,32 +180,29 @@ exports.cancelPayment = async (req, res) => {
       return res.status(404).json({ message: 'Wallet tidak ditemukan' });
     }
 
-    // Cari transaksi terbaru berdasarkan plannedPaymentId
-    const transactions = await Transaction.find({ plannedPaymentId: plan._id }).sort({ date: -1 }).limit(1);
-    if (!transactions.length) {
-      return res.status(404).json({ message: 'Tidak ditemukan transaksi untuk dibatalkan' });
+    const notes = await Note.find({ plannedPaymentId: plan._id }).sort({ date: -1 }).limit(1);
+    if (!notes.length) {
+      return res.status(404).json({ message: 'Tidak ditemukan catatan untuk dibatalkan' });
     }
 
-    const latestTransaction = transactions[0];
+    const latestNote = notes[0];
 
-    // Rollback saldo
     if (plan.type === 'income') {
-      wallet.balance -= latestTransaction.amount;
+      wallet.balance -= latestNote.amount;
     } else if (plan.type === 'expense') {
-      wallet.balance += latestTransaction.amount;
+      wallet.balance += latestNote.amount;
     }
 
     await wallet.save();
-    await latestTransaction.deleteOne();
+    await latestNote.deleteOne();
 
-    // Cek apakah masih ada transaksi lain untuk plan ini
-    const remaining = await Transaction.countDocuments({ plannedPaymentId: plan._id });
+    const remaining = await Note.countDocuments({ plannedPaymentId: plan._id });
     plan.status = remaining > 0 ? 'paid' : 'planned';
     await plan.save();
 
     res.json({
       message: 'Pembayaran terakhir berhasil dibatalkan',
-      rollbackAmount: latestTransaction.amount,
+      rollbackAmount: latestNote.amount,
       currentBalance: wallet.balance,
       statusNow: plan.status
     });
@@ -233,6 +211,3 @@ exports.cancelPayment = async (req, res) => {
     res.status(500).json({ message: 'Gagal membatalkan pembayaran', error: err.message });
   }
 };
-
-
-

@@ -28,12 +28,12 @@ describe('adjustWalletBalance', () => {
 });
 
 
-// Unit tests for transactionValidator.js
-const { validateTransactionInput } = require('../../src/utils/transactionValidator');
+// Unit tests for noteValidator.js
+const { validateNoteInput } = require('../../src/utils/noteValidator');
 
-describe('validateTransactionInput', () => {
+describe('validateNoteInput', () => {
   it('should return null for valid input', () => {
-    const result = validateTransactionInput({
+    const result = validateNoteInput({
       type: 'income',
       amount: 100,
       category: 'Food',
@@ -43,7 +43,7 @@ describe('validateTransactionInput', () => {
   });
 
   it('should return error for invalid type', () => {
-    const result = validateTransactionInput({
+    const result = validateNoteInput({
       type: 'bonus',
       amount: 100,
       category: 'Reward',
@@ -53,7 +53,7 @@ describe('validateTransactionInput', () => {
   });
 
   it('should return error for negative amount', () => {
-    const result = validateTransactionInput({
+    const result = validateNoteInput({
       type: 'expense',
       amount: -50,
       category: 'Food',
@@ -63,7 +63,7 @@ describe('validateTransactionInput', () => {
   });
 
   it('should return error for invalid date', () => {
-    const result = validateTransactionInput({
+    const result = validateNoteInput({
       type: 'income',
       amount: 100,
       category: 'Salary',
@@ -74,21 +74,21 @@ describe('validateTransactionInput', () => {
 });
 
 
-// Unit tests for transactionProcessor.js
-const { rollbackTransaction, applyTransaction } = require('../../src/utils/transactionProcessor');
+// Unit tests for noteProcessor.js
+const { rollbackNote, applyNote } = require('../../src/utils/noteProcessor');
 
-describe('Transaction Processor', () => {
-  it('should rollback income transaction', () => {
+describe('Note Processor', () => {
+  it('should rollback income note', () => {
     const wallet = { balance: 1000 };
-    const transaction = { type: 'income', amount: 300 };
-    rollbackTransaction(wallet, transaction);
+    const note = { type: 'income', amount: 300 };
+    rollbackNote(wallet, note);
     expect(wallet.balance).toBe(700);
   });
 
-  it('should apply expense transaction', () => {
+  it('should apply expense note', () => {
     const wallet = { balance: 1000 };
-    const transaction = { type: 'expense', amount: 200 };
-    applyTransaction(wallet, transaction);
+    const note = { type: 'expense', amount: 200 };
+    applyNote(wallet, note);
     expect(wallet.balance).toBe(800);
   });
 });
