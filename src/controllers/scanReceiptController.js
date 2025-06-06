@@ -58,19 +58,25 @@ const scanReceipt = async (req, res) => {
     const categoryListText = categories.map((c) => `- ${c}`).join("\n");
 
     const prompt = `Kamu adalah asisten keuangan digital. Saya ingin kamu membaca gambar nota dan mengisi data JSON berikut ini:
-      
-      {
-        "amount": (jumlah total pembelian dalam angka tanpa simbol),
-        "category": (pilih hanya dari daftar kategori di bawah ini),
-        "date": (tanggal transaksi dalam format YYYY-MM-DD),
-        "note": (deskripsi atau catatan dari nota)
-      }
-      
-      Gunakan kategori dari daftar ini saja (jangan membuat kategori sendiri):
-      
-      ${categoryListText}
-      
-      Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan teks.`;
+
+{
+  "type": (income atau expense, ditentukan dari isi nota),
+  "amount": (jumlah total pembelian atau pemasukan dalam angka tanpa simbol),
+  "category": (pilih hanya dari daftar kategori di bawah ini),
+  "date": (tanggal transaksi dalam format YYYY-MM-DD),
+  "note": (deskripsi atau catatan dari nota)
+}
+
+Gunakan kategori dari daftar ini saja (jangan membuat kategori sendiri):
+
+${categoryListText}
+
+Petunjuk tambahan:
+- Jika nota menunjukkan pembelian barang atau jasa, maka "type" adalah "expense".
+- Jika nota menunjukkan gaji, bonus, hadiah, atau uang masuk, maka "type" adalah "income".
+
+Hanya kirimkan hasil dalam format JSON valid saja, tanpa markdown atau tambahan teks.`;
+
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "models/gemini-2.0-flash" });
