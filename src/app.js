@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // List Routes
-app.use('/api/users', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/profile', userProfileRoutes);
 app.use('/api/wallets', walletRoutes);
 app.use('/api/notes', noteRoutes);
