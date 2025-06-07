@@ -16,6 +16,7 @@
     "bcryptjs": "^3.0.2",
     "chalk": "^4.1.2",
     "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -30,19 +31,24 @@
     "supertest": "^7.1.1"
   },
   "jest": {
-    "setupFiles": ["dotenv/config"],
+    "setupFiles": [
+      "dotenv/config"
+    ],
     "setupFilesAfterEnv": [
       "<rootDir>/tests/bootstrap.js"
     ],
     "testEnvironment": "node",
     "reporters": [
-    "default",
-    ["jest-html-reporter", {
-      "pageTitle": "Test Report",
-      "outputPath": "./reports/test-report.html",
-      "includeFailureMsg": true,
-      "includeConsoleLog": true
-    }]
-  ]
+      "default",
+      [
+        "jest-html-reporter",
+        {
+          "pageTitle": "Test Report",
+          "outputPath": "./reports/test-report.html",
+          "includeFailureMsg": true,
+          "includeConsoleLog": true
+        }
+      ]
+    ]
   }
 }

@@ -1,4 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const dayjs = require('dayjs');
+const customParseFormat = require('dayjs/plugin/customParseFormat');
+dayjs.extend(customParseFormat);
 
 const categories = [
   "Makanan & Minuman",
@@ -45,7 +48,7 @@ const voiceReceipt = async (req, res) => {
       return res.status(400).json({ error: "Teks hasil voice tidak ditemukan" });
     }
 
-    const prompt = `Kamu adalah asisten keuangan digital. Saya akan memberikan teks hasil voice yang berisi catatan pembelian atau pemasukan. Ubah menjadi data JSON dengan format berikut:
+    const prompt = `Kamu adalah asisten keuangan digital. Saya akan memberikan teks hasil voice yang berisi catatan pengeluaran atau pemasukan. Tugas kamu adalah mengubahnya menjadi format JSON dengan struktur sebagai berikut:
 
 {
   "type": (income atau expense),
@@ -55,13 +58,17 @@ const voiceReceipt = async (req, res) => {
   "note": (deskripsi transaksi)
 }
 
-Gunakan kategori dari daftar ini saja (jangan membuat kategori lain):
+📌 Ketentuan penting untuk field \"date\":
+- Jika tanggal lengkap disebutkan (misalnya: 5 Juni 2024), konversi ke format YYYY-MM-DD.
+- Jika hanya disebutkan frasa seperti \"hari ini\", \"kemarin\", atau \"besok\", tuliskan saja frasa itu di date
+
+📌 Gunakan kategori hanya dari daftar berikut (jangan buat kategori baru):
 
 ${categoryListText}
 
 Teks voice: """${text}"""
 
-Hanya kirimkan output dalam format JSON valid tanpa tambahan apapun.`;
+Kirimkan output dalam format JSON valid. Jangan tambahkan penjelasan atau teks lain.`;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "models/gemini-2.0-flash" });
@@ -73,6 +80,8 @@ Hanya kirimkan output dalam format JSON valid tanpa tambahan apapun.`;
     let json;
     try {
       json = JSON.parse(cleaned);
+
+      // Validasi kategori
       if (!categories.includes(json.category)) {
         return res.status(400).json({
           error: "Kategori tidak valid",
@@ -80,6 +89,21 @@ Hanya kirimkan output dalam format JSON valid tanpa tambahan apapun.`;
           receivedCategory: json.category,
         });
       }
+
+      // Konversi frasa tanggal ke format YYYY-MM-DD
+      if (typeof json.date === 'string') {
+        const lowerDate = json.date.toLowerCase().trim();
+        const today = dayjs();
+
+        if (lowerDate === 'hari ini') {
+          json.date = today.format('YYYY-MM-DD');
+        } else if (lowerDate === 'kemarin') {
+          json.date = today.subtract(1, 'day').format('YYYY-MM-DD');
+        } else if (lowerDate === 'besok') {
+          json.date = today.add(1, 'day').format('YYYY-MM-DD');
+        }
+      }
+
     } catch (e) {
       return res.status(400).json({ error: "Gagal parsing respons AI", raw: responseText });
     }
@@ -89,7 +113,7 @@ Hanya kirimkan output dalam format JSON valid tanpa tambahan apapun.`;
       note: json,
     });
   } catch (err) {
-    console.error("❌ Error voiceReceipt:", err.message);
+    console.error("\u274c Error voiceReceipt:", err.message);
     res.status(500).json({ error: "Terjadi kesalahan saat memproses teks voice" });
   }
 };
