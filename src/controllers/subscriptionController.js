@@ -67,6 +67,8 @@ exports.createSubscription = async (req, res) => {
 };
 
 exports.handleMidtransWebhook = async (req, res) => {
+    console.log('Webhook HIT ✅');
+  console.log('Payload:', req.body);
   try {
     const payload = req.body;
     const orderId = payload.order_id;

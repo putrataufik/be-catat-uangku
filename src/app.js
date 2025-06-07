@@ -18,6 +18,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 // List Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', userProfileRoutes);
