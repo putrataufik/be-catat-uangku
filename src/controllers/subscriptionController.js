@@ -8,7 +8,7 @@ const snap = new midtransClient.Snap({
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
-
+// tambahkan .env
 exports.createSubscription = async (req, res) => {
   try {
     const { amount } = req.body;
