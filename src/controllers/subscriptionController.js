@@ -12,6 +12,8 @@ const snap = new midtransClient.Snap({
 exports.createSubscription = async (req, res) => {
   try {
     const { userId, amount } = req.body;
+    console.log(userId);
+    console.log(req.body);
 
     // Validasi user
     const user = await User.findById(userId);
