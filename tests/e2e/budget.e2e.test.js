@@ -20,9 +20,9 @@ describe("E2E: Budget Management Flow", () => {
   };
 
   beforeEach(async () => {
-    await request(app).post("/api/users/register").send(user);
+    await request(app).post("/api/auth/register").send(user);
 
-    const login = await request(app).post("/api/users/login").send({
+    const login = await request(app).post("/api/auth/login").send({
       email: user.email,
       password: user.password,
     });

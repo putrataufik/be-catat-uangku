@@ -13,8 +13,8 @@ describe('E2E Wallet Test', () => {
 
   beforeEach(async () => {
     // Register dan Login
-    await request(app).post('/api/users/register').send(user);
-    const res = await request(app).post('/api/users/login').send({
+    await request(app).post('/api/auth/register').send(user);
+    const res = await request(app).post('/api/auth/login').send({
       email: user.email,
       password: user.password,
     });

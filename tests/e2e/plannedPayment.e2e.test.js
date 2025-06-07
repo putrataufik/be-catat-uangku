@@ -25,8 +25,8 @@ describe("E2E: Planned Payment Flow", () => {
   };
 
   beforeEach(async () => {
-    await request(app).post("/api/users/register").send(user);
-    const loginRes = await request(app).post("/api/users/login").send({
+    await request(app).post("/api/auth/register").send(user);
+    const loginRes = await request(app).post("/api/auth/login").send({
       email: user.email,
       password: user.password,
     });

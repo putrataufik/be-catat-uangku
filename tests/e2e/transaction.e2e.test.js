@@ -13,9 +13,9 @@ describe("E2E: Note flow with multiple wallets", () => {
   };
 
   beforeEach(async () => {
-    await request(app).post("/api/users/register").send(user);
+    await request(app).post("/api/auth/register").send(user);
 
-    const loginRes = await request(app).post("/api/users/login").send({
+    const loginRes = await request(app).post("/api/auth/login").send({
       email: user.email,
       password: user.password,
     });

@@ -8,20 +8,20 @@ describe("E2E Auth Test", () => {
     password: "Password1!",
   };
   test("Register - valid", async () => {
-    const res = await request(app).post("/api/users/register").send(validUser);
+    const res = await request(app).post("/api/auth/register").send(validUser);
     expect(res.statusCode).toBe(201);
   });
 
   test("Register - duplicate email", async () => {
-    await request(app).post("/api/users/register").send(validUser); // Daftarkan dulu
-    const res = await request(app).post("/api/users/register").send(validUser); // Coba lagi
+    await request(app).post("/api/auth/register").send(validUser); // Daftarkan dulu
+    const res = await request(app).post("/api/auth/register").send(validUser); // Coba lagi
     expect(res.statusCode).toBe(400);
     expect(res.body.message).toBe("Email sudah digunakan");
   });
 
   test("Login - correct credentials", async () => {
-    await request(app).post("/api/users/register").send(validUser); // Tambahkan ini
-    const res = await request(app).post("/api/users/login").send({
+    await request(app).post("/api/auth/register").send(validUser); // Tambahkan ini
+    const res = await request(app).post("/api/auth/login").send({
       email: validUser.email,
       password: validUser.password,
     });
@@ -32,8 +32,8 @@ describe("E2E Auth Test", () => {
   });
 
   test("Login - wrong password", async () => {
-    await request(app).post("/api/users/register").send(validUser); // Pastikan user terdaftar
-    const res = await request(app).post("/api/users/login").send({
+    await request(app).post("/api/auth/register").send(validUser); // Pastikan user terdaftar
+    const res = await request(app).post("/api/auth/login").send({
       email: validUser.email,
       password: "WrongPassword!",
     });
