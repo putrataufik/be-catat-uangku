@@ -11,7 +11,8 @@ const snap = new midtransClient.Snap({
 
 exports.createSubscription = async (req, res) => {
   try {
-    const { userId, amount } = req.body;
+    const { amount } = req.body;
+    const userId = req.user.userId;
     console.log(userId);
     console.log(req.body);
 
