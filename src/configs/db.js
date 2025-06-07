@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
+    console.log("MONGO URL KEY:", process.env.MONGO_URI);
+    console.log("MIDTRANS SERVER KEY:", process.env.MIDTRANS);
     console.log('MongoDB terhubung');
   } catch (err) {
     console.error('Gagal koneksi MongoDB:', err.message);

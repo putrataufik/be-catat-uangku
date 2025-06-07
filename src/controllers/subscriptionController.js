@@ -1,29 +1,24 @@
-const midtransClient = require('midtrans-client');
-const SubscriptionTransaction = require('../models/subscriptionTransactionModel');
+const snap = require('../configs/midtrans');
 const User = require('../models/userModel');
+const SubscriptionTransaction = require('../models/subscriptionTransactionModel'); // pastikan ada
 
-// Inisialisasi Snap Midtrans
-const snap = new midtransClient.Snap({
-  isProduction: false,
-  serverKey: process.env.MIDTRANS_SERVER_KEY,
-  clientKey: process.env.MIDTRANS_CLIENT_KEY,
-});
-// tambahkan .env
 exports.createSubscription = async (req, res) => {
   try {
+    const userId = req.user.userId; // didapat dari token middleware
     const { amount } = req.body;
-    const userId = req.user.userId;
-    console.log(userId);
-    console.log(req.body);
 
-    // Validasi user
+    console.log("UserID dari token:", userId);
+    console.log("Amount dari body:", amount);
+
+    if (!amount) {
+      return res.status(400).json({ message: "Amount is required" });
+    }
+
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
 
-    // Buat orderId unik
     const orderId = `SUBS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Parameter transaksi Midtrans
     const parameter = {
       transaction_details: {
         order_id: orderId,
@@ -43,31 +38,33 @@ exports.createSubscription = async (req, res) => {
       ],
     };
 
-    // Buat Snap Token
     const transaction = await snap.createTransaction(parameter);
 
-    // Simpan transaksi di database
-    const newTransaction = new SubscriptionTransaction({
-      userId: user._id,
+    // Simpan ke database MongoDB
+    await SubscriptionTransaction.create({
+      userId,
       orderId,
       snapToken: transaction.token,
       amount,
-      rawResponse: transaction
+      rawResponse: transaction,
     });
-
-    await newTransaction.save();
 
     return res.status(201).json({
       message: 'Transaksi berhasil dibuat',
       snapToken: transaction.token,
+      redirect_url: transaction.redirect_url,
       orderId,
     });
 
   } catch (err) {
     console.error('Gagal membuat langganan:', err);
-    return res.status(500).json({ message: 'Gagal membuat langganan', error: err.message });
+    return res.status(500).json({
+      message: 'Gagal membuat langganan',
+      error: err.ApiResponse ? JSON.stringify(err.ApiResponse) : err.message,
+    });
   }
 };
+
 
 exports.handleMidtransWebhook = async (req, res) => {
     console.log('Webhook HIT ✅');
