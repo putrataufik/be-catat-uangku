@@ -67,8 +67,9 @@ exports.createSubscription = async (req, res) => {
 
 
 exports.handleMidtransWebhook = async (req, res) => {
-    console.log('Webhook HIT ✅');
-  console.log('Payload:', req.body);
+  console.log('📩 Webhook HIT ✅');
+  console.log('🔍 Payload:', req.body);
+
   try {
     const payload = req.body;
     const orderId = payload.order_id;
@@ -76,8 +77,18 @@ exports.handleMidtransWebhook = async (req, res) => {
     const paymentType = payload.payment_type;
     const paidAt = payload.settlement_time ? new Date(payload.settlement_time) : null;
 
+    console.log('🆔 Order ID:', orderId);
+    console.log('📦 Status:', status);
+    console.log('💳 Payment Type:', paymentType);
+    console.log('⏱️ Paid At:', paidAt);
+
     const transaction = await SubscriptionTransaction.findOne({ orderId });
-    if (!transaction) return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+    if (!transaction) {
+      console.log('❌ Transaksi tidak ditemukan dengan Order ID:', orderId);
+      return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+    }
+
+    console.log('📄 Transaction found:', transaction);
 
     // Update data transaksi
     transaction.transactionStatus = status;
@@ -86,9 +97,18 @@ exports.handleMidtransWebhook = async (req, res) => {
     transaction.rawResponse = payload;
     await transaction.save();
 
+    console.log('✅ Transaction updated');
+
     // Update status langganan user jika sukses
     if (status === 'settlement') {
+      console.log('💡 Status settlement diterima, mencari user...');
+
       const user = await User.findById(transaction.userId);
+      if (!user) {
+        console.log('❌ User tidak ditemukan dengan ID:', transaction.userId);
+        return res.status(404).json({ message: 'User tidak ditemukan' });
+      }
+
       const now = new Date();
       const end = new Date(now);
       end.setMonth(end.getMonth() + 1); // langganan 1 bulan
@@ -98,16 +118,23 @@ exports.handleMidtransWebhook = async (req, res) => {
         startDate: now,
         endDate: end,
         lastPaymentOrderId: orderId,
-        paymentMethod: paymentType
+        paymentMethod: paymentType,
       };
 
       await user.save();
+      console.log('🏆 User berhasil di-update ke premium:', {
+        id: user._id,
+        isPremium: user.isPremium,
+        premium: user.premium,
+      });
+    } else {
+      console.log('ℹ️ Status bukan settlement, tidak mengubah user.');
     }
 
     res.status(200).json({ message: 'Webhook processed' });
-
   } catch (err) {
-    console.error('Webhook error:', err);
+    console.error('❗ Webhook error:', err);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
