@@ -5,7 +5,7 @@ const snap = new midtransClient.Snap({
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
-console.log('server key :', process.env.MIDTRANS_SERVER_KEY);
-console.log('client key :', process.env.MIDTRANS_CLIENT_KEY);
+console.log('midtrans server key :', process.env.MIDTRANS_SERVER_KEY);
+console.log('midtrans client key :', process.env.MIDTRANS_CLIENT_KEY);
 
 module.exports = snap;
