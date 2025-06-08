@@ -28,7 +28,7 @@ app.use('/api/scan-receipt', scanReceipt);
 app.use('/api/voice-receipt', voiceReceipt);
 app.use('/api/subscribe', subscriptionRoutes);
 
-// Tambahkan ini untuk menangani redirect dari Midtrans ke aplikasi mobile kamu:
+// // Tambahkan ini untuk menangani redirect dari Midtrans ke aplikasi mobile kamu:
 app.get('/payment-success', (req, res) => {
   res.redirect('catatuangku://payment-success');
 });

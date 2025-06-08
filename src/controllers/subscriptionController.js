@@ -66,38 +66,48 @@ exports.createSubscription = async (req, res) => {
 };
 
 
-exports.handleNotification = async (req, res) => {
+exports.handleMidtransWebhook = async (req, res) => {
+    console.log('Webhook HIT ✅');
+  console.log('Payload:', req.body);
   try {
-    const notification = req.body;
-    const apiClient = new midtransClient.Snap({
-      isProduction: false,
-      serverKey: process.env.MIDTRANS_SERVER_KEY,
-    });
+    const payload = req.body;
+    const orderId = payload.order_id;
+    const status = payload.transaction_status;
+    const paymentType = payload.payment_type;
+    const paidAt = payload.settlement_time ? new Date(payload.settlement_time) : null;
 
-    const statusResponse = await apiClient.transaction.notification(notification);
+    const transaction = await SubscriptionTransaction.findOne({ orderId });
+    if (!transaction) return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
 
-    const { order_id, transaction_status } = statusResponse;
-    const transaction = await SubscriptionTransaction.findOne({ orderId: order_id });
+    // Update data transaksi
+    transaction.transactionStatus = status;
+    transaction.paymentType = paymentType;
+    transaction.paidAt = paidAt;
+    transaction.rawResponse = payload;
+    await transaction.save();
 
-    if (!transaction) {
-      return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+    // Update status langganan user jika sukses
+    if (status === 'settlement') {
+      const user = await User.findById(transaction.userId);
+      const now = new Date();
+      const end = new Date(now);
+      end.setMonth(end.getMonth() + 1); // langganan 1 bulan
+
+      user.isPremium = true;
+      user.premium = {
+        startDate: now,
+        endDate: end,
+        lastPaymentOrderId: orderId,
+        paymentMethod: paymentType
+      };
+
+      await user.save();
     }
 
-    if (transaction_status === 'settlement') {
-      await User.findByIdAndUpdate(transaction.userId, {
-        isPremium: true,
-        premium: {
-          startDate: new Date(),
-          endDate: new Date(new Date().setMonth(new Date().getMonth() + 1)),
-          lastPaymentOrderId: order_id,
-          paymentMethod: notification.payment_type
-        }
-      });
-    }
+    res.status(200).json({ message: 'Webhook processed' });
 
-    res.status(200).json({ message: 'Notifikasi diproses' });
   } catch (err) {
-    console.error('Gagal memproses notifikasi:', err);
+    console.error('Webhook error:', err);
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
