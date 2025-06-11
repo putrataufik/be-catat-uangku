@@ -24,6 +24,14 @@ const subscriptionTransactionSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  subscriptionDate: {
+    type: Date,
+    required: false
+  },
+  expiryDate: {
+    type: Date,
+    required: false
+  },
   paymentToken: {
     type: String,
     required: true

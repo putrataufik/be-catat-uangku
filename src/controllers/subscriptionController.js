@@ -6,10 +6,10 @@ const SubscriptionTransaction = require("../models/subscriptionTransactionModel"
 exports.createSubscription = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { amount } = req.body;
+    const { gross_amount } = req.body;
 
     // Validate input
-    if (!amount || typeof amount !== "number" || amount <= 0) {
+    if (!gross_amount || typeof gross_amount !== "number" || gross_amount <= 0) {
       return res.status(400).json({ message: "Invalid amount provided." });
     }
 
@@ -26,7 +26,7 @@ exports.createSubscription = async (req, res) => {
     const transactionDetails = {
       transaction_details: {
         order_id: orderId,
-        gross_amount: amount,
+        gross_amount: gross_amount,
       },
       customer_details: {
         first_name: user.name,
@@ -35,7 +35,7 @@ exports.createSubscription = async (req, res) => {
       item_details: [
         {
           id: "premium-subscription",
-          price: amount,
+          price: gross_amount,
           quantity: 1,
           name: "Premium Subscription",
         },
@@ -88,56 +88,56 @@ exports.handleMidtransWebhook = async (req, res) => {
       transaction_status: status,
       payment_type: paymentType,
       gross_amount,
-      settlement_time,
-      user_id: userId,
-      customer_details
+      settlement_time
     } = notification;
-
-    // Compute subscription and expiry dates
-    const subscriptionDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const expiryDateObj = settlement_time ? new Date(settlement_time) : new Date();
-    expiryDateObj.setMonth(expiryDateObj.getMonth() + 1);
-    const expiryDate = expiryDateObj.toISOString().split('T')[0];
 
     // Find existing subscription transaction by orderId
     let transaction = await SubscriptionTransaction.findOne({ orderId });
     if (!transaction) {
-      console.log(`⚠️ No transaction found for orderId ${orderId}.`);
-      if (!userId) {
-        console.warn(`⛔ Cannot create transaction without userId. Skipping creation.`);
-        return res.status(200).json({ message: 'Transaction not found; creation skipped due to missing userId' });
+      console.warn(`⚠️ Transaction ${orderId} not found; skipping.`);
+      return res.status(200).json({ message: 'Transaction not found; no action' });
+    }
+
+    // Update subscription transaction fields
+    transaction.snapToken   = transactionId;
+    transaction.amount      = parseFloat(gross_amount);
+    transaction.transactionStatus = status;
+    transaction.paymentType = paymentType || transaction.paymentType;
+    transaction.paidAt      = settlement_time ? new Date(settlement_time) : transaction.paidAt;
+    transaction.rawRequest  = notification;
+
+    // Set active, dates
+    if (status === 'settlement') {
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setMonth(expiry.getMonth() + 1);
+      transaction.isActive        = true;
+      transaction.subscriptionDate = now;
+      transaction.expiryDate       = expiry;
+    }
+
+    await transaction.save();
+    console.log(`✅ SubscriptionTransaction updated for orderId ${orderId}.`);
+
+    // Update user profile to premium if settled
+    if (status === 'settlement' && transaction.userId) {
+      const user = await User.findById(transaction.userId);
+      if (user) {
+        const startDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 1);
+        user.isPremium = true;
+        user.premium = {
+          startDate,
+          endDate,
+          lastPaymentOrderId: orderId,
+          paymentMethod: paymentType
+        };
+        await user.save();
+        console.log(`🏆 User ${user._id} upgraded to premium.`);
+      } else {
+        console.warn(`❌ User ${transaction.userId} not found; cannot update profile.`);
       }
-      console.log(`🔄 Creating new transaction record for orderId ${orderId}.`);
-      transaction = new SubscriptionTransaction({
-        orderId,
-        userId,
-        amount: parseFloat(gross_amount),
-        snapToken: transactionId,
-        transactionId,
-        paymentType,
-        isActive: status === 'settlement',
-        status: status === 'settlement' ? 'active' : 'pending',
-        subscriptionDate: status === 'settlement' ? subscriptionDate : null,
-        expiryDate: status === 'settlement' ? expiryDate : null,
-        customerName: customer_details?.first_name || 'Unknown',
-        customerEmail: customer_details?.email || 'Unknown',
-        rawResponse: notification
-      });
-      await transaction.save();
-      console.log('✅ New subscription transaction created:', transaction._id);
-    } else {
-      console.log(`📄 Transaction ${transaction._id} found; updating.`);
-      transaction.transactionId   = transactionId;
-      transaction.paymentType     = paymentType;
-      transaction.amount          = parseFloat(gross_amount);
-      transaction.snapToken       = transactionId;
-      transaction.isActive        = status === 'settlement';
-      transaction.status          = status === 'settlement' ? 'active' : 'pending';
-      transaction.subscriptionDate = status === 'settlement' ? subscriptionDate : null;
-      transaction.expiryDate      = status === 'settlement' ? expiryDate : null;
-      transaction.rawResponse     = notification;
-      await transaction.save();
-      console.log(`✅ SubscriptionTransaction updated for orderId ${orderId}.`);
     }
 
     return res.status(200).json({ message: 'Notification handled successfully' });
@@ -146,7 +146,6 @@ exports.handleMidtransWebhook = async (req, res) => {
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 
 
