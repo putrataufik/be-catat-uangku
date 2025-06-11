@@ -30,7 +30,12 @@ app.use('/api/subscribe', subscriptionRoutes);
 
 // // Tambahkan ini untuk menangani redirect dari Midtrans ke aplikasi mobile kamu:
 app.get('/payment-success', (req, res) => {
-  res.redirect('catatuangku://payment-success');
+  const { order_id, status_code, transaction_status } = req.query;
+  const uri = `catatuangku://payment-success`
+    + `?order_id=${encodeURIComponent(order_id)}`
+    + `&status_code=${encodeURIComponent(status_code)}`
+    + `&transaction_status=${encodeURIComponent(transaction_status)}`;
+  res.redirect(uri);
 });
 
 app.get('/payment-failed', (req, res) => {
