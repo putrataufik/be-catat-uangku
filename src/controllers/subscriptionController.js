@@ -71,63 +71,76 @@ exports.createSubscription = async (req, res) => {
   }
 };
 
-/**
- * Handle Midtrans webhook notifications
- */
 exports.handleMidtransWebhook = async (req, res) => {
-  console.log('📩 Webhook HIT ✅');
-  console.log('🔍 Payload:', req.body);
-
   try {
-    const payload = req.body;
-    const orderId = payload.order_id;
-    const status = payload.transaction_status;
-    const paymentType = payload.payment_type;
-    const paidAt = payload.settlement_time ? new Date(payload.settlement_time) : null;
+    const notification = req.body;
+    console.log('📩 Notification received:', notification);
 
-    console.log('🆔 Order ID:', orderId);
-    console.log('📦 Status:', status);
-    console.log('💳 Payment Type:', paymentType);
-    console.log('⏱️ Paid At:', paidAt);
+    const {
+      order_id: orderId,
+      transaction_id: transactionId,
+      transaction_status: status,
+      payment_type: paymentType,
+      gross_amount,
+      settlement_time,
+      user_id: userId,
+      customer_details
+    } = notification;
 
-    // Ekstrak userId dari orderId
-    const userId = orderId.split('_')[1]; // contoh: subscr_653af92a61b88b5a... -> ambil userId
-    console.log('👤 User ID dari Order ID:', userId);
+    // Compute subscription and expiry dates
+    const subscriptionDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const expiryDateObj = settlement_time ? new Date(settlement_time) : new Date();
+    expiryDateObj.setMonth(expiryDateObj.getMonth() + 1);
+    const expiryDate = expiryDateObj.toISOString().split('T')[0];
 
-    const user = await User.findById(userId);
-    if (!user) {
-      console.log('❌ User tidak ditemukan dengan ID:', userId);
-      return res.status(404).json({ message: 'User tidak ditemukan' });
-    }
-
-    if (status === 'settlement') {
-      const now = new Date();
-      const end = new Date(now);
-      end.setMonth(end.getMonth() + 1);
-
-      user.isPremium = true;
-      user.premium = {
-        startDate: now,
-        endDate: end,
-        lastPaymentOrderId: orderId,
-        paymentMethod: paymentType,
-      };
-
-      await user.save();
-      console.log('🏆 User berhasil di-update ke premium:', {
-        id: user._id,
-        isPremium: user.isPremium,
-        premium: user.premium,
+    // Find existing subscription transaction by orderId
+    let transaction = await SubscriptionTransaction.findOne({ orderId });
+    if (!transaction) {
+      console.log(`⚠️ No transaction found for orderId ${orderId}.`);
+      if (!userId) {
+        console.warn(`⛔ Cannot create transaction without userId. Skipping creation.`);
+        return res.status(200).json({ message: 'Transaction not found; creation skipped due to missing userId' });
+      }
+      console.log(`🔄 Creating new transaction record for orderId ${orderId}.`);
+      transaction = new SubscriptionTransaction({
+        orderId,
+        userId,
+        amount: parseFloat(gross_amount),
+        snapToken: transactionId,
+        transactionId,
+        paymentType,
+        isActive: status === 'settlement',
+        status: status === 'settlement' ? 'active' : 'pending',
+        subscriptionDate: status === 'settlement' ? subscriptionDate : null,
+        expiryDate: status === 'settlement' ? expiryDate : null,
+        customerName: customer_details?.first_name || 'Unknown',
+        customerEmail: customer_details?.email || 'Unknown',
+        rawResponse: notification
       });
+      await transaction.save();
+      console.log('✅ New subscription transaction created:', transaction._id);
     } else {
-      console.log('ℹ️ Status bukan settlement, tidak mengubah user.');
+      console.log(`📄 Transaction ${transaction._id} found; updating.`);
+      transaction.transactionId   = transactionId;
+      transaction.paymentType     = paymentType;
+      transaction.amount          = parseFloat(gross_amount);
+      transaction.snapToken       = transactionId;
+      transaction.isActive        = status === 'settlement';
+      transaction.status          = status === 'settlement' ? 'active' : 'pending';
+      transaction.subscriptionDate = status === 'settlement' ? subscriptionDate : null;
+      transaction.expiryDate      = status === 'settlement' ? expiryDate : null;
+      transaction.rawResponse     = notification;
+      await transaction.save();
+      console.log(`✅ SubscriptionTransaction updated for orderId ${orderId}.`);
     }
 
-    res.status(200).json({ message: 'Webhook processed' });
-  } catch (err) {
-    console.error('❗ Webhook error:', err);
-    res.status(500).json({ message: 'Internal Server Error' });
+    return res.status(200).json({ message: 'Notification handled successfully' });
+  } catch (error) {
+    console.error('❗ Error handling notification:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
 
 
