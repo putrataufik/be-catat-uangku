@@ -2,11 +2,7 @@ require("dotenv").config();
 const snap = require("../configs/midtrans");
 const User = require("../models/userModel");
 const SubscriptionTransaction = require("../models/subscriptionTransactionModel");
-const crypto = require("crypto");
 
-/**
- * Create a new subscription transaction via Midtrans Snap
- */
 exports.createSubscription = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -27,7 +23,7 @@ exports.createSubscription = async (req, res) => {
     const orderId = `SUBS-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
     // Build Midtrans parameters
-    const parameter = {
+    const transactionDetails = {
       transaction_details: {
         order_id: orderId,
         gross_amount: amount,
@@ -46,30 +42,40 @@ exports.createSubscription = async (req, res) => {
       ],
     };
 
-    // Create transaction
-    const { token, redirect_url } = await snap.createTransaction(parameter);
+    // Create transaction via Midtrans Snap
+    const transaction = await snap.createTransaction(transactionDetails);
 
-    // Persist transaction with status 'pending'
-    await SubscriptionTransaction.create({
-      userId,
-      orderId,
-      snapToken: token,
-      amount,
-      transactionStatus: "pending",
-      rawResponse: parameter,
-    });
+    // Prepare subscription data
+    const subscriptionData = {
+      orderId: transactionDetails.transaction_details.order_id,
+      grossAmount: transactionDetails.transaction_details.gross_amount,
+      status: "pending",            // Status awal sebelum settlement
+      isActive: false,              // Belum aktif sebelum settlement
+      paymentToken: transaction.token,      // Token transaksi Midtrans
+      paymentUrl: transaction.redirect_url, // URL pembayaran
+      customerName: transactionDetails.customer_details.first_name,
+      customerEmail: transactionDetails.customer_details.email,
+      userId: userId,               // ID dari authenticated user
+      createdAt: new Date().toISOString(),
+      // juga simpan rawRequest kalau diperlukan
+      rawRequest: transactionDetails
+    };
+
+    // Persist ke MongoDB
+    await SubscriptionTransaction.create(subscriptionData);
 
     return res.status(201).json({
       message: "Subscription transaction created.",
-      snapToken: token,
-      redirect_url,
-      orderId,
+      paymentToken: subscriptionData.paymentToken,
+      paymentUrl: subscriptionData.paymentUrl,
+      orderId: subscriptionData.orderId,
     });
   } catch (error) {
-    console.log("Error in createSubscription:", { error });
+    console.error("Error in createSubscription:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 exports.handleMidtransWebhook = async (req, res) => {
   try {

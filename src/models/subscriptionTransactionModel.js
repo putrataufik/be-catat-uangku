@@ -9,37 +9,43 @@ const subscriptionTransactionSchema = new mongoose.Schema({
   orderId: {
     type: String,
     required: true,
-    unique: true // Setiap transaksi harus punya order ID yang unik
+    unique: true
   },
-  snapToken: {
-    type: String,
-    required: true
-  },
-  amount: {
+  grossAmount: {
     type: Number,
     required: true
   },
-  paymentType: {
-    type: String, // e.g., "gopay", "qris", "bank_transfer"
-    required: false
-  },
-  transactionStatus: {
+  status: {
     type: String,
-    enum: [
-      'pending',
-      'settlement',
-      'cancel',
-      'deny',
-      'expire',
-      'refund',
-      'partial_refund',
-      'capture'
-    ],
+    enum: ['pending', 'active', 'cancel', 'deny', 'expire', 'refund', 'partial_refund', 'capture'],
     default: 'pending'
   },
-  paidAt: Date, // Diisi saat transaksi berhasil (settlement)
-  rawResponse: {
-    type: mongoose.Schema.Types.Mixed, // Menyimpan full response dari Midtrans (opsional, untuk debugging/log)
+  isActive: {
+    type: Boolean,
+    default: false
+  },
+  paymentToken: {
+    type: String,
+    required: true
+  },
+  paymentUrl: {
+    type: String,
+    required: true
+  },
+  customerName: {
+    type: String,
+    required: false
+  },
+  customerEmail: {
+    type: String,
+    required: false
+  },
+  rawRequest: {
+    type: mongoose.Schema.Types.Mixed,
+    required: false
+  },
+  paidAt: {
+    type: Date,
     required: false
   }
 }, {
