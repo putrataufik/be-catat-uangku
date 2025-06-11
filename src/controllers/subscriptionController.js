@@ -1,24 +1,32 @@
-const snap = require('../configs/midtrans');
-const User = require('../models/userModel');
-const SubscriptionTransaction = require('../models/subscriptionTransactionModel'); // pastikan ada
+require("dotenv").config();
+const snap = require("../configs/midtrans");
+const User = require("../models/userModel");
+const SubscriptionTransaction = require("../models/subscriptionTransactionModel");
+const crypto = require("crypto");
 
+/**
+ * Create a new subscription transaction via Midtrans Snap
+ */
 exports.createSubscription = async (req, res) => {
   try {
-    const userId = req.user.userId; // didapat dari token middleware
+    const userId = req.user.userId;
     const { amount } = req.body;
 
-    console.log("UserID dari token:", userId);
-    console.log("Amount dari body:", amount);
-
-    if (!amount) {
-      return res.status(400).json({ message: "Amount is required" });
+    // Validate input
+    if (!amount || typeof amount !== "number" || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount provided." });
     }
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' });
+    // Find user
+    const user = await User.findById(userId).select("name email");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-    const orderId = `SUBS-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Generate unique order ID
+    const orderId = `SUBS-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
+    // Build Midtrans parameters
     const parameter = {
       transaction_details: {
         order_id: orderId,
@@ -30,42 +38,42 @@ exports.createSubscription = async (req, res) => {
       },
       item_details: [
         {
-          id: 'premium-subscription',
+          id: "premium-subscription",
           price: amount,
           quantity: 1,
-          name: 'Langganan Premium Catat Uangku',
-        }
+          name: "Premium Subscription",
+        },
       ],
     };
 
-    const transaction = await snap.createTransaction(parameter);
+    // Create transaction
+    const { token, redirect_url } = await snap.createTransaction(parameter);
 
-    // Simpan ke database MongoDB
+    // Persist transaction with status 'pending'
     await SubscriptionTransaction.create({
       userId,
       orderId,
-      snapToken: transaction.token,
+      snapToken: token,
       amount,
-      rawResponse: transaction,
+      transactionStatus: "pending",
+      rawResponse: parameter,
     });
 
     return res.status(201).json({
-      message: 'Transaksi berhasil dibuat',
-      snapToken: transaction.token,
-      redirect_url: transaction.redirect_url,
+      message: "Subscription transaction created.",
+      snapToken: token,
+      redirect_url,
       orderId,
     });
-
-  } catch (err) {
-    console.error('Gagal membuat langganan:', err);
-    return res.status(500).json({
-      message: 'Gagal membuat langganan',
-      error: err.ApiResponse ? JSON.stringify(err.ApiResponse) : err.message,
-    });
+  } catch (error) {
+    console.log("Error in createSubscription:", { error });
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
+/**
+ * Handle Midtrans webhook notifications
+ */
 exports.handleMidtransWebhook = async (req, res) => {
   console.log('📩 Webhook HIT ✅');
   console.log('🔍 Payload:', req.body);
@@ -82,36 +90,20 @@ exports.handleMidtransWebhook = async (req, res) => {
     console.log('💳 Payment Type:', paymentType);
     console.log('⏱️ Paid At:', paidAt);
 
-    const transaction = await SubscriptionTransaction.findOne({ orderId });
-    if (!transaction) {
-      console.log('❌ Transaksi tidak ditemukan dengan Order ID:', orderId);
-      return res.status(404).json({ message: 'Transaksi tidak ditemukan' });
+    // Ekstrak userId dari orderId
+    const userId = orderId.split('_')[1]; // contoh: subscr_653af92a61b88b5a... -> ambil userId
+    console.log('👤 User ID dari Order ID:', userId);
+
+    const user = await User.findById(userId);
+    if (!user) {
+      console.log('❌ User tidak ditemukan dengan ID:', userId);
+      return res.status(404).json({ message: 'User tidak ditemukan' });
     }
 
-    console.log('📄 Transaction found:', transaction);
-
-    // Update data transaksi
-    transaction.transactionStatus = status;
-    transaction.paymentType = paymentType;
-    transaction.paidAt = paidAt;
-    transaction.rawResponse = payload;
-    await transaction.save();
-
-    console.log('✅ Transaction updated');
-
-    // Update status langganan user jika sukses
     if (status === 'settlement') {
-      console.log('💡 Status settlement diterima, mencari user...');
-
-      const user = await User.findById(transaction.userId);
-      if (!user) {
-        console.log('❌ User tidak ditemukan dengan ID:', transaction.userId);
-        return res.status(404).json({ message: 'User tidak ditemukan' });
-      }
-
       const now = new Date();
       const end = new Date(now);
-      end.setMonth(end.getMonth() + 1); // langganan 1 bulan
+      end.setMonth(end.getMonth() + 1);
 
       user.isPremium = true;
       user.premium = {
@@ -137,4 +129,5 @@ exports.handleMidtransWebhook = async (req, res) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
 
