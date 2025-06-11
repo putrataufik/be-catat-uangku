@@ -10,6 +10,7 @@ const budgetRoutes = require('./routes/budgetRoutes');
 const scanReceipt = require('./routes/scanRoutes');
 const voiceReceipt = require('./routes/voiceRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 dotenv.config();
 const app = express();
@@ -27,24 +28,7 @@ app.use('/api/budgets', budgetRoutes);
 app.use('/api/scan-receipt', scanReceipt);
 app.use('/api/voice-receipt', voiceReceipt);
 app.use('/api/subscribe', subscriptionRoutes);
-
-// // Tambahkan ini untuk menangani redirect dari Midtrans ke aplikasi mobile kamu:
-app.get('/payment-success', (req, res) => {
-  const { order_id, status_code, transaction_status } = req.query;
-  const uri = `catatuangku://payment-success`
-    + `?order_id=${encodeURIComponent(order_id)}`
-    + `&status_code=${encodeURIComponent(status_code)}`
-    + `&transaction_status=${encodeURIComponent(transaction_status)}`;
-  res.redirect(uri);
-});
-
-app.get('/payment-failed', (req, res) => {
-  res.redirect('catatuangku://payment-failed');
-});
-
-app.get('/payment-error', (req, res) => {
-  res.redirect('catatuangku://payment-error');
-});
+app.use('/api/dashboard', dashboardRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {
