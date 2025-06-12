@@ -1,3 +1,5 @@
+//models/budgetModel.js
+
 const mongoose = require('mongoose');
 
 const budgetSchema = new mongoose.Schema({
@@ -16,7 +18,7 @@ const budgetSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  categories: [String], // ⬅️ ubah dari category: String
+  categories: [String],
   period: String, // "monthly", "weekly", etc.
   startDate: Date,
   endDate: Date,
