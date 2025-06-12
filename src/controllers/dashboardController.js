@@ -73,3 +73,61 @@ exports.getTrendSaldo = async (req, res) => {
     });
   }
 };
+
+exports.getArusKas = async (req, res) => {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const wallets = await Wallet
+      .find({ userId: req.user.userId })
+      .select('_id')
+      .lean();
+    const walletIds = wallets.map(w => w._id);
+
+    const result = await Note.aggregate([
+      {
+        $match: {
+          walletId: { $in: walletIds },
+          date: { $gte: startOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          income: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0]
+            }
+          },
+          expense: {
+            $sum: {
+              $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0]
+            }
+          }
+        }
+      }
+    ]);
+
+    const data = result[0] || { income: 0, expense: 0 };
+    const netCashflow = data.income - data.expense;
+
+    return res.json({
+      success: true,
+      data: {
+        income: data.income,
+        expense: data.expense,
+        netCashflow
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data arus kas',
+      error: err.message
+    });
+  }
+};
+
