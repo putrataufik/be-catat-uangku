@@ -2,20 +2,25 @@
 const Note   = require('../models/noteModel');
 const Wallet = require('../models/walletModel');
 
+
 exports.getTrendSaldo = async (req, res) => {
   try {
+    // Periode default 30 hari
     const period = parseInt(req.query.period) || 30;
     const fromDate = new Date();
     fromDate.setDate(fromDate.getDate() - period + 1);
 
-    // Ambil semua wallet milik user
+    // Ambil semua wallet user
     const wallets = await Wallet
       .find({ userId: req.user.userId })
-      .select('_id name balance')
+      .select('_id balance')
       .lean();
+    // Total saldo saat ini (endDate)
+    const totalBalance = wallets.reduce((sum, w) => sum + w.balance, 0);
+
     const walletIds = wallets.map(w => w._id);
 
-    // Agregasi Note per hari
+    // Agregasi catatan per hari (net income-expense)
     const raw = await Note.aggregate([
       { $match: { walletId: { $in: walletIds }, date: { $gte: fromDate } } },
       { $project: {
@@ -25,34 +30,38 @@ exports.getTrendSaldo = async (req, res) => {
       }},
       { $group: {
           _id:           "$day",
-          totalIncome:   { $sum: { $cond: [ { $eq: ["$type", "income"] }, "$amount", 0 ] } },
-          totalExpense:  { $sum: { $cond: [ { $eq: ["$type", "expense"] }, "$amount", 0 ] } }
+          totalIncome:  { $sum: { $cond: [ { $eq: ["$type", "income"] }, "$amount", 0 ] } },
+          totalExpense: { $sum: { $cond: [ { $eq: ["$type", "expense"] }, "$amount", 0 ] } }
       }},
-      { $sort: { "_id": 1 } }
+      { $sort: { _id: 1 } }
     ]);
 
-    // Hitung saldo kumulatif
-    let cumulative = 0;
+    // Hitung net perubahan selama periode
+    const netPeriod = raw.reduce(
+      (sum, item) => sum + (item.totalIncome - item.totalExpense),
+      0
+    );
+    // Tentukan saldo awal pada fromDate
+    let cumulative = totalBalance - netPeriod;
+
+    // Bangun trend dengan saldo kumulatif
     const trend = raw.map(item => {
       cumulative += (item.totalIncome - item.totalExpense);
       return { date: item._id, balance: cumulative };
     });
 
-    // Format wallets dan total balance
+    // Format wallet balances
     const walletBalances = wallets.map(w => ({
       id:      w._id,
-      name:    w.name,
       balance: w.balance
     }));
-    const totalBalance = walletBalances.reduce((sum, w) => sum + w.balance, 0);
 
-    // Kirim response lengkap
     return res.json({
       success: true,
       data: {
         trend,
         wallets: walletBalances,
-        totalBalance    // ← ini yang baru ditambahkan
+        totalBalance
       }
     });
   } catch (err) {
