@@ -131,3 +131,55 @@ exports.getArusKas = async (req, res) => {
   }
 };
 
+exports.getTopExpenses = async (req, res) => {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const wallets = await Wallet.find({ userId: req.user.userId }).select('_id').lean();
+    const walletIds = wallets.map(w => w._id);
+
+    const result = await Note.aggregate([
+      {
+        $match: {
+          walletId: { $in: walletIds },
+          date: { $gte: startOfMonth },
+          type: 'expense',
+        },
+      },
+      {
+        $group: {
+          _id: '$category',
+          total: { $sum: '$amount' }
+        }
+      },
+      {
+        $sort: { total: -1 }
+      },
+      {
+        $limit: 5 // Ambil top 5 pengeluaran kategori
+      }
+    ]);
+
+    const data = result.map(item => ({
+      category: item._id,
+      total: item.total
+    }));
+
+    return res.json({
+      success: true,
+      data
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data pengeluaran teratas',
+      error: err.message
+    });
+  }
+};
+
+
