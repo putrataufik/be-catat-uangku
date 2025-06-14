@@ -4,7 +4,6 @@ require('dotenv').config();
 const app = require('./src/app');
 const connectDB = require('./src/configs/db');
 const midtrans = require('./src/configs/midtrans');
-require('./src/jobs/notificationJob');
 
 
 connectDB();
