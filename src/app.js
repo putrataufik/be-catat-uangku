@@ -11,6 +11,8 @@ const scanReceipt = require('./routes/scanRoutes');
 const voiceReceipt = require('./routes/voiceRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const fcmRoutes = require('./routes/fcmRoutes');
+
 
 dotenv.config();
 const app = express();
@@ -29,6 +31,7 @@ app.use('/api/scan-receipt', scanReceipt);
 app.use('/api/voice-receipt', voiceReceipt);
 app.use('/api/subscribe', subscriptionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/fcm', fcmRoutes);
 
 // Error Handler Middleware
 app.use((err, req, res, next) => {

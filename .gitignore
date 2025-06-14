@@ -5,3 +5,4 @@ runssh
 coverage/
 reports/
 .vscode/
+src/configs/serviceAccountKey.json
