@@ -195,3 +195,23 @@ exports.getTrendSaldoByWallet = async (req, res) => {
     });
   }
 };
+
+exports.getWalletById = async (req, res) => {
+  try {
+    const wallet = await Wallet.findOne({
+      _id: req.params.id,
+      userId: req.user.userId,
+    });
+
+    if (!wallet) {
+      return res.status(404).json({ message: 'Wallet tidak ditemukan' });
+    }
+
+    res.json(wallet);
+  } catch (err) {
+    res.status(500).json({
+      message: 'Gagal mengambil wallet',
+      error: err.message,
+    });
+  }
+};
