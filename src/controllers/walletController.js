@@ -120,3 +120,78 @@ exports.getWalletSummary = async (req, res) => {
     res.status(500).json({ message: 'Gagal mendapatkan summary wallet', error: err.message });
   }
 };
+
+exports.getTrendSaldoByWallet = async (req, res) => {
+  try {
+    const walletId = req.params.walletId;
+    const period = parseInt(req.query.period) || 30;
+    const fromDate = new Date();
+    fromDate.setDate(fromDate.getDate() - period + 1);
+
+    // Verifikasi bahwa wallet milik user
+    const wallet = await Wallet.findOne({ _id: walletId, userId: req.user.userId }).lean();
+    if (!wallet) {
+      return res.status(404).json({
+        success: false,
+        message: "Wallet tidak ditemukan atau bukan milik Anda",
+      });
+    }
+
+    const currentBalance = wallet.balance;
+
+    // Ambil catatan transaksi berdasarkan wallet dan periode
+    const raw = await Note.aggregate([
+      { $match: { walletId: wallet._id, date: { $gte: fromDate } } },
+      {
+        $project: {
+          day: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          amount: 1,
+          type: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$day",
+          totalIncome: {
+            $sum: { $cond: [{ $eq: ["$type", "income"] }, "$amount", 0] },
+          },
+          totalExpense: {
+            $sum: { $cond: [{ $eq: ["$type", "expense"] }, "$amount", 0] },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Hitung net perubahan selama periode
+    const netPeriod = raw.reduce(
+      (sum, item) => sum + (item.totalIncome - item.totalExpense),
+      0
+    );
+
+    // Saldo awal = saldo sekarang - net perubahan
+    let cumulative = currentBalance - netPeriod;
+
+    const trend = raw.map((item) => {
+      cumulative += item.totalIncome - item.totalExpense;
+      return { date: item._id, balance: cumulative };
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        walletId: wallet._id,
+        walletName: wallet.name,
+        trend,
+        currentBalance,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Gagal mengambil trend saldo wallet",
+      error: err.message,
+    });
+  }
+};
