@@ -274,12 +274,12 @@ exports.payPlannedPayment = async (req, res) => {
   }
 };
 
-exports.cancelPayment = async (req, res) => {
+exports.cancelPlannedPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { targetMonth, targetYear } = req.body;
 
-    if (targetMonth == null || targetYear == null) {
+    if (!targetMonth || !targetYear) {
       return res.status(400).json({ message: 'targetMonth dan targetYear harus diisi' });
     }
 
@@ -305,28 +305,32 @@ exports.cancelPayment = async (req, res) => {
       return res.status(404).json({ message: 'Wallet tidak ditemukan' });
     }
 
-    // Kembalikan saldo
     wallet.balance += plan.type === 'income' ? -note.amount : note.amount;
     await wallet.save();
 
-    // Hapus Note
     await note.deleteOne();
 
-    // Update status (jika bulan yang dibatalkan adalah bulan terakhir)
-    const now = new Date();
-    const isCurrentMonth = start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear();
-    if (isCurrentMonth) {
+    // Cek apakah note ini adalah transaksi terakhir
+    const latestNote = await Note.find({ plannedPaymentId: plan._id })
+      .sort({ date: -1 })
+      .limit(1);
+
+    const isLastPayment = !latestNote.length || note.date >= latestNote[0].date;
+
+    if (isLastPayment) {
       plan.status = 'planned';
       await plan.save();
     }
 
-    res.json({
+    return res.status(200).json({
       message: 'Pembayaran berhasil dibatalkan',
-      restoredBalance: wallet.balance
+      restoredBalance: wallet.balance,
+      rollbackAmount: note.amount,
+      statusNow: plan.status
     });
   } catch (err) {
-    console.error('❌ Gagal membatalkan pembayaran:', err);
-    res.status(500).json({ message: 'Gagal membatalkan pembayaran', error: err.message });
+    console.error('❌ Error cancelPlannedPayment:', err);
+    return res.status(500).json({ message: 'Gagal membatalkan pembayaran', error: err.message });
   }
 };
 

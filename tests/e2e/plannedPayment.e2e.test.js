@@ -90,7 +90,7 @@ describe("E2E: Planned Payment Flow", () => {
     expect(res.body.plan.title).toBe("Updated Plan");
   });
 
- it("should pay a planned payment and deduct wallet balance", async () => {
+it("should pay a planned payment and deduct wallet balance", async () => {
     const create = await request(app)
       .post("/api/planned-payments")
       .set("Authorization", `Bearer ${token}`)
@@ -130,7 +130,6 @@ describe("E2E: Planned Payment Flow", () => {
     expect(refunded).toBe(cancelAmount);
     expect(cancel.body.statusNow).toBe("planned");
   });
-});
 
   it("should delete a planned payment", async () => {
     const create = await request(app)
