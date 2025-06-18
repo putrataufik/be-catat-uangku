@@ -9,7 +9,7 @@ const {
   updatePlannedPaymentById,
   deletePlannedPaymentById,
   payPlannedPayment,
-  cancelPayment
+  cancelPlannedPayment
 } = require('../controllers/plannedPaymentController');
 
 // Endpoint Planned Payment
@@ -19,6 +19,6 @@ router.get('/:id', authMiddleware, getPlannedPaymentById); // 3. Ambil berdasark
 router.put('/:id', authMiddleware, updatePlannedPaymentById); // 4. Update berdasarkan ID
 router.delete('/:id', authMiddleware, deletePlannedPaymentById); // 5. Hapus berdasarkan ID
 router.post('/:id/pay', authMiddleware, payPlannedPayment); // 6. Bayar
-router.post('/:id/cancel-payment', authMiddleware, cancelPayment);
+router.post('/:id/cancel-payment', authMiddleware, cancelPlannedPayment);
 
 module.exports = router;
