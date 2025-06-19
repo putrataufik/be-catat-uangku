@@ -168,17 +168,72 @@ exports.getPlannedPayments = async (req, res) => {
 exports.getPlannedPaymentById = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
 
-    const plan = await PlannedPayment.findOne({ _id: id, user_id: req.user.userId });
+    const plan = await PlannedPayment.findOne({ _id: id, user_id: userId });
     if (!plan) return res.status(404).json({ message: 'Planned payment tidak ditemukan' });
 
-    const notes = await Note.find({ plannedPaymentId: plan._id });
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    res.json({ plan, notes });
+    const existingNote = await Note.findOne({
+      plannedPaymentId: plan._id,
+      date: { $gte: monthStart, $lt: monthEnd }
+    });
+
+    const notes = await Note.find({ plannedPaymentId: plan._id }).sort({ date: -1 });
+
+    const wallet = await Wallet.findById(plan.wallet_id);
+
+    const getNextPaymentDate = (plan) => {
+      if (!plan.is_recurring) return null;
+
+      const lastPaymentDate = new Date(plan.payment_date);
+      const interval = plan.recurring_interval || 1;
+      let nextDate;
+
+      switch (plan.recurring_type) {
+        case 'monthly':
+          nextDate = new Date(lastPaymentDate.setMonth(lastPaymentDate.getMonth() + interval));
+          break;
+        case 'weekly':
+          nextDate = new Date(lastPaymentDate.setDate(lastPaymentDate.getDate() + 7 * interval));
+          break;
+        case 'yearly':
+          nextDate = new Date(lastPaymentDate.setFullYear(lastPaymentDate.getFullYear() + interval));
+          break;
+        default:
+          return null;
+      }
+
+      if (plan.end_date && new Date(nextDate) > new Date(plan.end_date)) {
+        return null;
+      }
+
+      return nextDate;
+    };
+
+    const nextPaymentDate = getNextPaymentDate(plan);
+
+    res.status(200).json({
+      ...plan.toObject(),
+      isPaidThisMonth: !!existingNote,
+      isUpcoming: nextPaymentDate && nextPaymentDate >= now && !existingNote,
+      nextPaymentDate,
+      paymentHistory: notes,
+      walletInfo: wallet
+        ? {
+            name: wallet.name,
+            currentBalance: wallet.balance
+          }
+        : null
+    });
   } catch (err) {
     res.status(500).json({ message: 'Gagal mengambil planned payment', error: err.message });
   }
 };
+
 
 exports.updatePlannedPaymentById = async (req, res) => {
   try {
