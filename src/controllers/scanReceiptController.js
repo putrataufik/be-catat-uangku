@@ -21,21 +21,41 @@ const scanReceipt = async (req, res) => {
     const base64Image = Buffer.from(file.buffer).toString("base64");
 
     const categories = [
-      "Makanan & Minuman",
-      "Berbelanja",
-      "Perlengkapan rumah",
-      "Perlengkapan sekolah",
+           "Makanan & Minuman",
       "Transportasi",
-      "Kendaraan",
-      "Hidup dan Hiburan",
-      "Komunikasi, PC",
-      "Pengeluaran Finansial",
-      "Investasi",
-      "Pemasukan",
-      "Lain-lain"
+      "Belanja Harian",
+      "Pulsa & Internet",
+      "Listrik & Air",
+      "Parkir",
+      "Sewa / Cicilan Rumah",
+      "Perabotan & Alat Rumah",
+      "Perawatan Rumah",
+      "Tagihan Rutin",
+      "Pendidikan Anak",
+      "Uang Saku",
+      "Pengasuhan",
+      "Obat-obatan",
+      "Periksa Dokter",
+      "BPJS / Asuransi",
+      "Langganan Streaming",
+      "Nonton Bioskop",
+      "Nongkrong / Café",
+      "Hobi",
+      "Donasi / Amal",
+      "Zakat / Infaq",
+      "Kado / Hadiah",
+      "Cicilan / Kredit",
+      "Pajak & Denda",
+      "Lainnya",
+      "Gaji",
+      "Bonus",
+      "Hasil Usaha",
+      "Hadiah",
+      "Penjualan Barang",
+      "Cashback / Reward",
     ];
 
-    const categoryListText = categories.map((c) => `- ${c}`).join("\n");
+    
 
     const prompt = `Kamu adalah asisten keuangan digital. Saya ingin kamu membaca gambar nota dan mengisi data JSON berikut ini:
 
@@ -49,7 +69,7 @@ const scanReceipt = async (req, res) => {
 
 Gunakan kategori dari daftar ini saja (jangan membuat kategori sendiri):
 
-${categoryListText}
+${categories}
 
 Petunjuk tambahan:
 - Jika nota menunjukkan pembelian barang atau jasa, maka "type" adalah "expense".

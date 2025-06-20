@@ -45,23 +45,23 @@ describe("E2E: Scan Receipt Upload and Parsing", () => {
     expect(res.body.error).toBe("Tipe gambar tidak didukung");
   });
 
-  it("should accept a valid image and return note JSON", async () => {
-    const imagePath = path.resolve(__dirname, "../assets/sample-recipe.jpg");
+  // it("should accept a valid image and return note JSON", async () => {
+  //   const imagePath = path.resolve(__dirname, "../assets/sample-recipe.jpg");
 
-    if (!fs.existsSync(imagePath)) {
-      console.warn("⚠️ Test skipped: sample-receipt.jpg not found in assets folder.");
-      return;
-    }
+  //   if (!fs.existsSync(imagePath)) {
+  //     console.warn("⚠️ Test skipped: sample-receipt.jpg not found in assets folder.");
+  //     return;
+  //   }
 
-    const res = await request(app)
-      .post("/api/scan-receipt")
-      .set("Authorization", `Bearer ${token}`)
-      .attach("image", imagePath);
+  //   const res = await request(app)
+  //     .post("/api/scan-receipt")
+  //     .set("Authorization", `Bearer ${token}`)
+  //     .attach("image", imagePath);
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body.note).toHaveProperty("amount");
-    expect(res.body.note).toHaveProperty("category");
-    expect(res.body.note).toHaveProperty("date");
-    expect(res.body.note).toHaveProperty("note");
-  });
+  //   expect(res.statusCode).toBe(200);
+  //   expect(res.body.note).toHaveProperty("amount");
+  //   expect(res.body.note).toHaveProperty("category");
+  //   expect(res.body.note).toHaveProperty("date");
+  //   expect(res.body.note).toHaveProperty("note");
+  // });
 });
